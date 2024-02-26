@@ -327,6 +327,18 @@ def autoRAxML(outPut,version):
     subprocess.run(f'mv *.raxml {outPut}/RAXML_results/',
                    shell=True,
                    check=True)
+    
+def R_Trees(outPut):
+    command = ['Rscript', 
+              '--vanilla',
+              'MLtree.R',
+             f'{outPut}/RAXML_results/RAxML_bestTree.AllSeqsPops.raxml',
+             '{outPut}_Tree']
+    subprocess.run(' '.join(command),
+                   shell=True,
+                   check=True)
+    subprocess.run(f'mv {outPut}_Tree.pdf ~/{outPut}/RAXML_results')
+
                
 def cleanup(outPut):
     command =['mv', 
@@ -391,6 +403,7 @@ for file in fileList:
     autoMerge(outPut_Folder, file, fileNum)
 sampleBuilder(outPut_Folder)
 autoRAxML(outPut_Folder,RAXML_version)
+R_Trees(outPut_Folder)
 cleanup(outPut_Folder)
 
     
