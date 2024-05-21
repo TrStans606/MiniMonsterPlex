@@ -126,7 +126,7 @@ def autoVCF(outPut, fileNum):
 			'-U',
 			file,
 			'--max-intronlen',
-			'1',
+			'20',
 			'--summary-file',
 			f'{outPut}/{fileNum}summary.txt',
 			'|',
