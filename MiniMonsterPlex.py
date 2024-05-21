@@ -9,6 +9,7 @@ import os
 import glob
 import subprocess 
 import argparse
+import multiprocessing
 
 #setting up arg parsing for the output folder
 parser = argparse.ArgumentParser(
@@ -116,11 +117,12 @@ included_hosts_file = args.hfl
 
 #autoVCF function 
 def autoVCF(outPut, fileNum):
+	threads = multiprocessing.cpu_count()
 	print(fileNum, " is entering the pipeline")
 	#histat 2 + samtools sort call
 	command = ['hisat2',
 			'-p',
-			'2',
+			str(threads),
 			'-x',
 			'index/70-15index',
 			'-U',
@@ -151,7 +153,7 @@ def autoVCF(outPut, fileNum):
 	command = ['bcftools',
 			'mpileup',
 			'--threads',
-			'2',
+			str(threads),
 			'-d',
 			'100000',
 			'-R',
@@ -333,11 +335,12 @@ def sampleBuilder(outPut):
 			if (seqID) in sample_metadata:
 				seqSpecies = sample_metadata[seqID][0]
 				seqHost = sample_metadata[seqID][1]
-				seqCountry = sample_metadata[seqID][2]
-				writeSeq.write(f'>{seqID}_{seqSpecies}_{seqHost}_{seqCountry}\n{read[1]}\n')
+				seqLineage = sample_metadata[seqID][2]
+				seqCountry = sample_metadata[seqID][3]
+				writeSeq.write(f'>{seqID}_{seqSpecies}_{seqHost}_{seqLineage}_{seqCountry}\n{read[1]}\n')
 			else:
 				writeSeq.write('>' + read[0].split('/')[1].split('.')[0].split('hits')[0]
-							   + '\n' + read[1] + '\n')
+							   + '_._._._.' + '\n' + read[1] + '\n')
 						
 def metaDataBuilder(metadata_file):
 	metaData = {}
@@ -346,8 +349,9 @@ def metaDataBuilder(metadata_file):
 			ID = line.split(',')[0].strip('\n')
 			species = line.split(',')[1].strip('\n')
 			host = line.split(',')[2].strip('\n')
-			country = line.split(',')[3].strip('\n')
-			metaData[ID] = [species, host, country]
+			lineage = line.split(',')[3].strip('\n')
+			country = line.split(',')[4].strip('\n')
+			metaData[ID] = [species, host, lineage, country]
 		return metaData
 
 #filters the built seq meta by isolate
@@ -372,7 +376,7 @@ def fasta_filter_hosts(outPut,included_hosts,filtered):
 			lines = read.readlines()
 			for i in range(0,len(lines)):
 				if lines[i][0] == '>':
-					if len(lines[i].split('_')) > 2 and lines[i].split('_')[2].strip() in included_hosts:
+					if len(lines[i].split('_')) > 2 and lines[i].split('_')[3].strip() in included_hosts:
 						to_write.append([lines[i],lines[i+1]])
 		with open(f'{outPut}/built_fasta/{outPut}builtSeqFiltered2.fasta','a') as write:
 			for isolate in to_write:
