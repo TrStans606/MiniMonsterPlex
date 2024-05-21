@@ -26,7 +26,7 @@ Build from source:
 * [Standard RAXML Sequential version:](https://github.com/stamatak/standard-RAxML)
 
 ## Data Input
-Fastq files with either a .fq or .fastq extension should be gzip compressed, extention .gz, and dropped into the [fastq/](fastq) folder before running. If your files are all uncompressed try using this command in the [fastq/](fastq) folder to bulk compress them:
+Fastq files with either a .fq or .fastq extension should be gzip compressed, extension .gz, and dropped into the [fastq/](fastq) folder before running. If your files are all uncompressed try using this command in the [fastq/](fastq) folder to bulk compress them:
 ```
 bgzip *.fastq
 ```
@@ -34,7 +34,7 @@ or
 ```
 bgzip *.fq
 ```
-Depnding on what extension your files are.
+Depending on what extension your files are.
 
 ## Command Line Functions
 ```
@@ -47,14 +47,14 @@ Python3 MiniMonsterPlex.py -o [output folder name] -m [.csv metadata file name] 
 
 Filtering options:
 
-**Raxml requires a minium of 4 isolates in a multi fasta file to generate a tree. If you do not provide 4 isolates or your chosen host does not have 4 isolates the program will stop and ask if you want to continue without filtering or quit entirely.**
+**Raxml requires a minimum of 4 isolates in a multi fasta file to generate a tree. If you do not provide 4 isolates or your chosen host does not have 4 isolates the program will stop and ask if you want to continue without filtering or quit entirely.**
 
-NOTE: Isolate should be the name of the file you are uploading minus the extenesions: so SRR1571.fq.gz will be SRR1571. Host names should be the exact same as those entered into your metadata file.
+NOTE: Isolate should be the name of the file you are uploading minus the extensions: so SRR1571.fq.gz will be SRR1571. Host names should be the exact same as those entered into your metadata file.
 
-+ ```-i```= Isolate list[Optional]: a space seperated list of all isolates you want included in the tree building. 
-+ ```-il```= Isolate file[Optional]: a new line seperated txt file of all isolates you want included in the tree building. This can be combined with -i.
-+ ```-hf```= Host list[Optional]: a space seperated list of all isolates from the specfic hosts listed you want in tree building.
-+ ```-hfl```= Host file[Optional]: a new line seperated txt file of all hosts you want included in the tree building. This can be combined with -hf.
++ ```-i```= Isolate list[Optional]: a space separated list of all isolates you want included in the tree building. 
++ ```-il```= Isolate file[Optional]: a new line separated txt file of all isolates you want included in the tree building. This can be combined with -i.
++ ```-hf```= Host list[Optional]: a space separated list of all isolates from the specific hosts listed you want in tree building.
++ ```-hfl```= Host file[Optional]: a new line separated txt file of all hosts you want included in the tree building. This can be combined with -hf.
 
 The host and isolate filtering can be combined. In that case the program will first filter by host and then filter by isolate. 
 
@@ -66,7 +66,7 @@ sampleID,species,host,country
 104,Po,Oryza,China
 ```
 * The ```sampleID``` is the exact same of the fastq file given to MiniMonsterPlex so in this example it would be *104.fastq*.
-* The ```species``` is the sepcies name where the sequencing was done.
+* The ```species``` is the species name where the sequencing was done.
 * The ```host``` is the host of the pathogen
 * The ```country``` is the country of origin.
 
@@ -74,8 +74,8 @@ A sample csv file can be found as [metadata.csv](metadata.csv)
 
 ## RAXML 
 * Build the Standard Sequential RAXML version listed in [Requirements](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#requirements) from source
-* The Stanard, SSE3, or AVX version will work.
-* Move the created exectuable to the MiniMonsterPlex directory
+* The Standard, SSE3, or AVX version will work.
+* Move the created executable to the MiniMonsterPlex directory
 * provide the exact name of the RAXML binary as the -r argument
 
 ## TreeBuilding with MLtree
