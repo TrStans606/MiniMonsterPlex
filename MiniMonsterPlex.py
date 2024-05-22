@@ -527,13 +527,31 @@ for file in fileList:
 	autoMerge(outPut_Folder, file, fileNum)
 sampleBuilder(outPut_Folder)
 #this starts the filtering process if more then seq id is given
-if len(included_isolates) >= 4:
+if len(included_isolates) >= 1:
 	fasta_filter(outPut_Folder, included_isolates)
 	filtered = True
 	
 if len(included_hosts) >= 1:
 	fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
 	filtered = True
+
+
+if filtered:
+	with open(f'{outPut_Folder}/built_fasta/{outPut_Folder}builtSeqFiltered.fasta', 'r') as read:
+		cnt = 0
+		for line in read:
+			if line[0] == ">":
+				cnt += 1
+	if cnt < 4:
+		user_input = ''
+		while user_input != 'y':
+			print("Tree building requires a minium of 4 isolates and you have less then 4 in your filtering")
+			user_input= input("Would you like to build a tree with all isolates(y) or quit now(n)? (y/n)")
+			if user_input == 'n':
+				quit()
+		filtered = False
+
+
 autoRAxML(outPut_Folder,RAXML_version,filtered)
 command = ['Rscript',
 	   '--vanilla',
