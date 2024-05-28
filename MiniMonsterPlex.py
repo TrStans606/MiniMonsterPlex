@@ -530,7 +530,6 @@ for file in fileList:
 	autoVCF(outPut_Folder, fileNum)
 	autoMerge(outPut_Folder, file, fileNum)
 sampleBuilder(outPut_Folder)
-quit()
 #this starts the filtering process if more then seq id is given
 if len(included_isolates) >= 1:
 	fasta_filter(outPut_Folder, included_isolates)
