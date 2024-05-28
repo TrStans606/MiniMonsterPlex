@@ -38,12 +38,13 @@ Depending on what extension your files are.
 
 ## Command Line Functions
 ```
-Python3 MiniMonsterPlex.py -o [output folder name] -m [.csv metadata file name] -r [raxml binary name] -i [isolate_1] [isolate_2] -il [example.txt] -hf [host_1] [host_2] -hfl [example.txt] -h
+Python3 MiniMonsterPlex.py -o [output folder name/] -m [.csv metadata file name] -r [raxml binary name] -f [folder name/]-i [isolate_1] [isolate_2] -il [example.txt] -hf [host_1] [host_2] -hfl [example.txt] -h
 ```
 + ```-h```= Help command: including this flag will bring up the help screen.
-+ ```-o```= Output Folder: User given name for the created output folder. When no option is used it defaults to output. **Note** only two folders can have the same name so only one default folder can exist at a time.
++ ```-o```= Output Folder: User given name for the created output folder. When no option is used it defaults to output. **Note** you must must give the name of a non existant folder.
 + ```-m```= Metadata file: Name of the .csv metadata file formatted as shown below.
 + ```-r```=Raxml version: the name of the standard raxml binary
++ ```-f```=Input Folder: the name of the folder where your fastq.gz input files are. Defaults to the fastq folder included with this repository
 
 Filtering options:
 
@@ -62,13 +63,17 @@ The host and isolate filtering can be combined. In that case the program will fi
 
 MiniMonsterPlex requires a custom .csv format for metadata:
 ```
-sampleID,species,host,country
-104,Po,Oryza,China
+sampleID,species,host,lineage,country
+104,Po,Oryza,1,China
+105,.,.,.,.
 ```
 * The ```sampleID``` is the exact same of the fastq file given to MiniMonsterPlex so in this example it would be *104.fastq*.
 * The ```species``` is the species name where the sequencing was done.
 * The ```host``` is the host of the pathogen
+* The ```lineage``` is the lineage of the pathogen.
 * The ```country``` is the country of origin.
+Non existant fields should be filled in with a period.
+**NOTE**: fields cannot have , or _ characters. These are used as seperator characters. If you input a seqid with _ characters they will all be replaced with - characters. 
 
 A sample csv file can be found as [metadata.csv](metadata.csv)
 
