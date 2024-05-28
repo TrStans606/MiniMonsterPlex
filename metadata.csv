@@ -1,2 +1,2 @@
-sampleID,species,host,country
-104,Po,Oryza,China
+sampleID,species,host,lineage,country
+104,Po,Oryza,1,China
