@@ -52,6 +52,19 @@ parser.add_argument(
 	required=True
 )
 
+#command line option for alternative input folder
+
+parser.add_argument(
+	'-f',
+	action='store',
+    nargs='?',
+	help=(
+		'file path to folder containing fastq.gz files for input. Default is fastq/'
+	),
+	default='fastq',
+	required=False
+)
+
 #command line option for filtering by specific isolates
 parser.add_argument(
 	'-i',
@@ -109,6 +122,7 @@ args = parser.parse_args()
 outPut_Folder = args.o
 metadata_file_name = args.m
 RAXML_version = args.r
+input_folder = args.f
 included_isolates = args.i
 included_isolates_file = args.il
 included_hosts = args.hf
@@ -451,7 +465,7 @@ def autoRAxML(outPut,version,filtered):
 			
 def cleanup(outPut):
 	command =['mv', 
-			'fastq/*.gz',
+			f'{input_folder}/*.gz',
 			'completed_fastq/']
 	subprocess.run(' '.join(command),
 				shell=True,
@@ -522,7 +536,7 @@ if included_hosts_file != None:
 				included_hosts.append(line.strip())
 
 filtered = False
-fileList = glob.glob('fastq/*.gz')
+fileList = glob.glob(f'{input_folder}/*.gz')
 os.makedirs(f'{outPut_Folder}/seperateCall/')
 os.makedirs(f"{outPut_Folder}/Coverage/")
 for file in fileList:
