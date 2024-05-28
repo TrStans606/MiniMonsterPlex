@@ -345,18 +345,16 @@ def sampleBuilder(outPut):
 	with open(f'{outPut}/built_fasta/{outPut}builtSeqMeta.fasta', 'a') as writeSeq:
 		for read in seqs:
 			seqID = read[0].split('/')[1].split('.')[0].split('hits')[0]
+			if len(seqID.split("_")) > 1:
+				seqID = f'{"-".join(seqID.split("_"))}'
 			print(seqID)
 			if (seqID) in sample_metadata:
-				if len(seqID.split("_")) > 1:
-					seqID = f'{"-".join(seqID.split("_"))}'
 				seqSpecies = sample_metadata[seqID][0]
 				seqHost = sample_metadata[seqID][1]
 				seqLineage = sample_metadata[seqID][2]
 				seqCountry = sample_metadata[seqID][3]
 				writeSeq.write(f'>{seqID}_{seqSpecies}_{seqHost}_{seqLineage}_{seqCountry}\n{read[1]}\n')
 			else:
-				if len(seqID.split("_")) > 1:
-					seqID = f'{"-".join(seqID.split("_"))}'
 				writeSeq.write('>' + seqID
 							   + '_._._._.' + '\n' + read[1] + '\n')
 						
