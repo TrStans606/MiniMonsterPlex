@@ -127,6 +127,7 @@ included_isolates = args.i
 included_isolates_file = args.il
 included_hosts = args.hf
 included_hosts_file = args.hfl
+threads = multiprocessing.cpu_count()
 #gzipped = args.gz
 
 #autoVCF function 
@@ -217,7 +218,109 @@ def autoVCF(outPut, fileNum):
 	subprocess.run(' '.join(command),
 				shell=True,
 				check=True)
-		
+
+def auto_hisat2(outPut, fileNum,threads):
+	print(fileNum, " is entering the pipeline")
+	#histat 2 + samtools sort call
+	command = ['hisat2',
+			'-p',
+			str(threads),
+			'-x',
+			'index/70-15index',
+			'-U',
+			file,
+			'--max-intronlen',
+			'20',
+			'--summary-file',
+			f'{outPut}/{fileNum}summary.txt',
+			'|',
+			'samtools',
+			'sort',
+			'-',
+			'-@',
+			'2',
+			'-O',
+			'bam',
+			'-o',
+			f'{outPut}/{fileNum}hits.bam']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+
+def auto_tabix(outPut, fileNum,file_ex,run):
+	command = ['tabix',
+			f'{outPut}/{fileNum}{file_ex}']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+	if run == 1:
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("tabix1 done")
+
+	if run == 2:
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("tabix2 done")
+
+def auto_mpileup(outPut,fileNum,threads):
+	command = ['bcftools',
+			'mpileup',
+			'--threads',
+			str(threads),
+			'-d',
+			'100000',
+			'-R',
+			'MonsterPlexRegionsFileSuperCont.txt',
+			'--annotate',
+			'FORMAT/AD',
+			'-f',
+			'index/70-15.fasta.fasta',
+			f'{outPut}/{fileNum}hits.bam',
+			'>>',
+			f'{outPut}/{fileNum}.vcf']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("mpileup done")
+	
+def auto_call(outPut,fileNum):
+	command = ['bcftools',
+			'call',
+			'-c',
+			'--ploidy',
+			'1',
+			f'{outPut}/{fileNum}.vcf',
+			'-o',
+			f'{outPut}/seperateCall/{fileNum}call.vcf']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("call done")
+	
+def auto_bedtools(outPut,fileNum):
+	command = ['bedtools',
+			'genomecov',
+			'-ibam',
+			f'{outPut}/{fileNum}hits.bam',
+			'-bg',
+			'>',
+			f'{outPut}/Coverage/{fileNum}cover.bed']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("bedtools done")
+
+def auto_bgzip(outPut, fileNum,file_ex):
+	command =['bgzip',
+			f'{outPut}/{fileNum}{file_ex}']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("bgzip done")
+
 def autoMerge(outPut, file, fileNum):
 	#bg zip the bcftools call result file
 	command = ['bgzip',
@@ -233,6 +336,8 @@ def autoMerge(outPut, file, fileNum):
 				check=True)
 	with open(f'{outPut}/fastqListCall.txt', 'a') as append:
 		append.write(f'{outPut}/seperateCall/' + file.split('/')[1].split('.')[0] + 'call.vcf.gz\n')
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("merge done")
 		
 def sampleBuilder(outPut):
 	command = ['bcftools',
@@ -357,6 +462,8 @@ def sampleBuilder(outPut):
 			else:
 				writeSeq.write('>' + seqID
 							   + '_._._._.' + '\n' + read[1] + '\n')
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("samplebuilder done")
 						
 def metaDataBuilder(metadata_file):
 	metaData = {}
@@ -382,6 +489,8 @@ def fasta_filter(outPut,included_isolates):
 	with open(f'{outPut}/built_fasta/{outPut}builtSeqFiltered.fasta','a') as write:
 		for isolate in to_write:
 			write.write(f'{isolate[0]}{isolate[1]}')
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("filtering done")
         
 #filters the built seq meta by host
 def fasta_filter_hosts(outPut,included_hosts,filtered):
@@ -399,6 +508,8 @@ def fasta_filter_hosts(outPut,included_hosts,filtered):
 				write.write(f'{isolate[0]}{isolate[1]}')
 		os.remove(f'{outPut}/built_fasta/{outPut}builtSeqFiltered.fasta')
 		os.rename(f'{outPut}/built_fasta/{outPut}builtSeqFiltered2.fasta', f'{outPut}/built_fasta/{outPut}builtSeqFiltered.fasta')
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("filtering done")
 	#otherwise it acts the same as fasta_filter but with hosts
 	else:
 		to_write = []
@@ -411,13 +522,15 @@ def fasta_filter_hosts(outPut,included_hosts,filtered):
 		with open(f'{outPut}/built_fasta/{outPut}builtSeqFiltered.fasta','a') as write:
 			for isolate in to_write:
 				write.write(f'{isolate[0]}{isolate[1]}')
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("filtering done")
 
 
 def autoRAxML(outPut,version,filtered):
 	os.mkdir(f'{outPut}/RAXML_results')
 	if filtered==False:
 	#command for running RAXML
-		command = [f'./{version}',
+		command = [f'{version}',
 			 '-p',
 			 '1234',
 			 '-f',
@@ -438,8 +551,10 @@ def autoRAxML(outPut,version,filtered):
 		subprocess.run(f'mv *.raxml {outPut}/RAXML_results/',
 				 shell=True,
 				 check=True)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("autoraxml done")
 	else:
-		command = [f'./{version}',
+		command = [f'{version}',
 			  '-p',
 			   '1234',
 			   '-f',
@@ -460,7 +575,48 @@ def autoRAxML(outPut,version,filtered):
 		subprocess.run(f'mv *.raxml {outPut}/RAXML_results/',
 				 shell=True,
 				 check=True)
-			
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("autoraxml done")
+
+def raxmlGate(outPut_Folder,filtered):
+	if filtered:
+		with open(f'{outPut_Folder}/built_fasta/{outPut_Folder}builtSeqFiltered.fasta', 'r') as read:
+			cnt = 0
+			for line in read:
+				if line[0] == ">":
+					cnt += 1
+		if cnt < 4:
+			user_input = ''
+			while user_input != 'y':
+				print("Tree building requires a minium of 4 isolates and you have less then 4 in your filtering")
+				user_input= input("Would you like to build a tree with all isolates(y) or quit now(n)? (y/n)")
+				if user_input == 'n':
+					quit()
+			filtered = False
+			return(filtered)
+		else:
+			filtered = True
+			return(filtered)
+	else:
+		return(False)
+
+def mlTree(outPut_Folder):
+	command = ['Rscript',
+		   '--vanilla',
+		   'MLtree.R',
+		   f'{outPut_Folder}/RAXML_results/RAxML_bestTree.miniMonsterPlex.raxml']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+	command = ['mv',
+	        'NA.pdf',
+	        f'{outPut_Folder}/RAXML_results/{outPut_Folder}_tree.pdf']
+	subprocess.run(' '.join(command),
+	                        shell=True,
+	                        check=True)
+	with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("mltree done")
+
 def cleanup(outPut):
 	command =['mv', 
 			f'{input_folder}/*.gz',
@@ -492,6 +648,18 @@ def cleanup(outPut):
 	subprocess.run(' '.join(command),
 				shell=True,
 				check=True)
+	command = ['rm',
+			f'{outPut}/*.*',]
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
+	command = ['rm',
+			'-r',
+			f'{outPut}/seperateCall/',
+			f'{outPut}/Coverage/']
+	subprocess.run(' '.join(command),
+				shell=True,
+				check=True)
 	command = ['cat',
 			f'{outPut}/built_fasta/{outPut}builtSeqMeta.fasta',
 			'>>',
@@ -499,6 +667,7 @@ def cleanup(outPut):
 	subprocess.run(' '.join(command),
 				shell=True,
 				check=True)
+#	os.remove(f'{outPut_Folder}/log.txt')
 		
 #if gzipped:
 #	 fileList = glob.glob('fastq/*.gz')
@@ -533,56 +702,453 @@ if included_hosts_file != None:
 			if line.strip() not in included_hosts:
 				included_hosts.append(line.strip())
 
+threads = multiprocessing.cpu_count()
 filtered = False
 fileList = glob.glob(f'{input_folder}/*.gz')
-os.makedirs(f'{outPut_Folder}/seperateCall/')
-os.makedirs(f"{outPut_Folder}/Coverage/")
-for file in fileList:
-	fileNum = file.split('/')[1].split('.')[0]
-	autoVCF(outPut_Folder, fileNum)
-	autoMerge(outPut_Folder, file, fileNum)
-sampleBuilder(outPut_Folder)
-#this starts the filtering process if more then seq id is given
-if len(included_isolates) >= 1:
-	fasta_filter(outPut_Folder, included_isolates)
-	filtered = True
-	
-if len(included_hosts) >= 1:
-	fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
-	filtered = True
+
+try:
+	with open(f'{outPut_Folder}/log.txt','r') as read:
+		step = read.readlines()
+		print(step)
+		match step[0]:
+			case "start":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_hisat2(outPut_Folder, fileNum, threads,1)
+					auto_tabix(outPut_Folder, fileNum,'hits.bam')
+					auto_mpileup(outPut_Folder, fileNum, threads)
+					auto_call(outPut_Folder, fileNum)
+					auto_bedtools(outPut_Folder, fileNum)
+					auto_bgzip(outPut_Folder, fileNum, ".vcf")
+					auto_tabix(outPut_Folder, fileNum, ".vcf.gz")
+					autoMerge(outPut_Folder, file, fileNum)
+					
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-if filtered:
-	with open(f'{outPut_Folder}/built_fasta/{outPut_Folder}builtSeqFiltered.fasta', 'r') as read:
-		cnt = 0
-		for line in read:
-			if line[0] == ">":
-				cnt += 1
-	if cnt < 4:
-		user_input = ''
-		while user_input != 'y':
-			print("Tree building requires a minium of 4 isolates and you have less then 4 in your filtering")
-			user_input= input("Would you like to build a tree with all isolates(y) or quit now(n)? (y/n)")
-			if user_input == 'n':
-				quit()
-		filtered = False
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "autohisat2 done":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_tabix(outPut_Folder, fileNum,'hits.bam',1)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("tabix1 done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_mpileup(outPut_Folder, fileNum, threads)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("mpileup done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_call(outPut_Folder, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("call done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bedtools(outPut_Folder, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bedtools done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bgzip(outPut_Folder, fileNum, ".vcf")
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bgzip done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_tabix(outPut_Folder, fileNum, ".vcf.gz",2)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("tabix2 done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					autoMerge(outPut_Folder, file, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("merge done")
+				
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-autoRAxML(outPut_Folder,RAXML_version,filtered)
-command = ['Rscript',
-	   '--vanilla',
-	   'MLtree.R',
-	   f'{outPut_Folder}/RAXML_results/RAxML_bestTree.miniMonsterPlex.raxml']
-subprocess.run(' '.join(command),
-			shell=True,
-			check=True)
-command = ['mv',
-        'NA.pdf',
-        f'{outPut_Folder}/RAXML_results/{outPut_Folder}_tree.pdf']
-subprocess.run(' '.join(command),
-                        shell=True,
-                        check=True)
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
 
-cleanup(outPut_Folder)
+				mlTree(outPut_Folder)
 
-	
+				cleanup(outPut_Folder)
+			
+			case "tabix1 done":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_mpileup(outPut_Folder, fileNum, threads)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("mpileup done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_call(outPut_Folder, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("call done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bedtools(outPut_Folder, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bedtools done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bgzip(outPut_Folder, fileNum, ".vcf")
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bgzip done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_tabix(outPut_Folder, fileNum, ".vcf.gz",2)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("tabix2 done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					autoMerge(outPut_Folder, file, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("merge done")
+				
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "mpileup done":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_call(outPut_Folder, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("call done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bedtools(outPut_Folder, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bedtools done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bgzip(outPut_Folder, fileNum, ".vcf")
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bgzip done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_tabix(outPut_Folder, fileNum, ".vcf.gz",2)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("tabix2 done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					autoMerge(outPut_Folder, file, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("merge done")
+				
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "call done":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bedtools(outPut_Folder, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bedtools done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bgzip(outPut_Folder, fileNum, ".vcf")
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bgzip done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_tabix(outPut_Folder, fileNum, ".vcf.gz",2)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("tabix2 done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					autoMerge(outPut_Folder, file, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("merge done")
+				
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "bedtools done":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_bgzip(outPut_Folder, fileNum, ".vcf")
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("bgzip done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_tabix(outPut_Folder, fileNum, ".vcf.gz",2)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("tabix2 done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					autoMerge(outPut_Folder, file, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("merge done")
+				
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "bgzip done":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					auto_tabix(outPut_Folder, fileNum, ".vcf.gz",2)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("tabix2 done")
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					autoMerge(outPut_Folder, file, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("merge done")
+				
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "tabix2 done":
+				for file in fileList:
+					fileNum = file.split('/')[1].split('.')[0]
+					autoMerge(outPut_Folder, file, fileNum)
+					with open(f'{outPut_Folder}/log.txt','w') as create:
+						create.write("merge done")
+				
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "merge done":
+				sampleBuilder(outPut_Folder)
+				#this starts the filtering process if more then seq id is given
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "samplebuilder done":
+				if len(included_isolates) >= 1:
+					fasta_filter(outPut_Folder, included_isolates)
+					filtered = True
+					
+				if len(included_hosts) >= 1:
+					fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+					filtered = True
+						
+				filtered = raxmlGate(outPut_Folder,filtered)
+
+
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "filtering done":
+				autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "autoraxml done":
+				mlTree(outPut_Folder)
+
+				cleanup(outPut_Folder)
+				
+			case "mltree done":
+				cleanup(outPut_Folder)
+
+except:
+	print("no log file")
+	os.makedirs(f'{outPut_Folder}/seperateCall/')
+	os.makedirs(f"{outPut_Folder}/Coverage/")
+	with open(f'{outPut_Folder}/log.txt','a') as create:
+		create.write("start")
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		auto_hisat2(outPut_Folder, fileNum, threads)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("autohisat2 done")
+
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		auto_tabix(outPut_Folder, fileNum,'hits.bam',1)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("tabix1 done")
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		auto_mpileup(outPut_Folder, fileNum, threads)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("mpileup done")
+
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		auto_call(outPut_Folder, fileNum)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("call done")
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		auto_bedtools(outPut_Folder, fileNum)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("bedtools done")
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		auto_bgzip(outPut_Folder, fileNum, ".vcf")
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("bgzip done")
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		auto_tabix(outPut_Folder, fileNum, ".vcf.gz",2)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("tabix2 done")
+	for file in fileList:
+		fileNum = file.split('/')[1].split('.')[0]
+		autoMerge(outPut_Folder, file, fileNum)
+		with open(f'{outPut_Folder}/log.txt','w') as create:
+			create.write("merge done")
+
+	sampleBuilder(outPut_Folder)
+	#this starts the filtering process if more then seq id is given
+	print(filtered)
+	print(included_isolates)
+	print(included_hosts)
+	if len(included_isolates) >= 1:
+		fasta_filter(outPut_Folder, included_isolates)
+		filtered = True
+		
+	if len(included_hosts) >= 1:
+		fasta_filter_hosts(outPut_Folder, included_hosts,filtered)
+		filtered = True
+			
+	filtered = raxmlGate(outPut_Folder,filtered)
+
+
+	autoRAxML(outPut_Folder,RAXML_version,filtered)
+
+	mlTree(outPut_Folder)
+
+	cleanup(outPut_Folder)
