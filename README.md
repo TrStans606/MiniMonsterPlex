@@ -22,6 +22,7 @@ Install via Conda:
 * [Samtools](https://anaconda.org/bioconda/samtools)
 * [Bcftools](https://anaconda.org/bioconda/bcftools)
 * [BedTools](https://anaconda.org/bioconda/bedtools)
+
 Build from source:
 * [Standard RAXML Sequential version:](https://github.com/stamatak/standard-RAxML)
 
