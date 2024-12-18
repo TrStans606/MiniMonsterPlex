@@ -117,6 +117,8 @@ included_isolates_file = args.il
 included_hosts = args.hf
 included_hosts_file = args.hfl
 threads = multiprocessing.cpu_count()
+if threads > 8:
+	threads =8
 #gzipped = args.gz
 
 def auto_bowtie2(outPut, fileNum,threads):
