@@ -42,16 +42,6 @@ parser.add_argument(
 	default=None
 )
 
-#command line option for RAxML versions
-parser.add_argument(
-	'-r',
-	action='store',
-	help=(
-		'Name of the RAxML version used'
-	),
-	required=True
-)
-
 #command line option for alternative input folder
 
 parser.add_argument(
@@ -121,7 +111,6 @@ args = parser.parse_args()
 
 outPut_Folder = args.o
 metadata_file_name = args.m
-RAXML_version = args.r
 input_folder = args.f
 included_isolates = args.i
 included_isolates_file = args.il
@@ -130,20 +119,17 @@ included_hosts_file = args.hfl
 threads = multiprocessing.cpu_count()
 #gzipped = args.gz
 
-def auto_hisat2(outPut, fileNum,threads):
+def auto_bowtie2(outPut, fileNum,threads):
 	print(fileNum, " is entering the pipeline")
 	#histat 2 + samtools sort call
-	command = ['hisat2',
+	command = ['bowtie2 --no-unal',
 			'-p',
 			str(threads),
 			'-x',
-			'index/70-15index',
+			'index/70-15_index',
 			'-U',
 			file,
-			'--max-intronlen',
-			'20',
-			'--summary-file',
-			f'{outPut}/{fileNum}summary.txt',
+			'--local --very-sensitive-local',
 			'|',
 			'samtools',
 			'sort',
@@ -437,11 +423,11 @@ def fasta_filter_hosts(outPut,included_hosts,filtered):
 			create.write("filtering done")
 
 
-def autoRAxML(outPut,version,filtered):
+def autoRAxML(outPut,filtered):
 	os.mkdir(f'{outPut}/RAXML_results')
 	if filtered==False:
 	#command for running RAXML
-		command = [f'{version}',
+		command = ['raxmlHPC',
 			 '-p',
 			 '1234',
 			 '-f',
@@ -465,7 +451,7 @@ def autoRAxML(outPut,version,filtered):
 		with open(f'{outPut_Folder}/log.txt','w') as create:
 			create.write("autoraxml done")
 	else:
-		command = [f'{version}',
+		command = ['raxmlHPC',
 			  '-p',
 			   '1234',
 			   '-f',
@@ -625,7 +611,7 @@ try:
 			case "start":
 				for file in fileList:
 					fileNum = file.split('/')[1].split('.')[0]
-					auto_hisat2(outPut_Folder, fileNum, threads,1)
+					auto_bowtie2(outPut_Folder, fileNum, threads,1)
 					auto_tabix(outPut_Folder, fileNum,'hits.bam')
 					auto_mpileup(outPut_Folder, fileNum, threads)
 					auto_call(outPut_Folder, fileNum)
@@ -647,7 +633,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -703,7 +689,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -754,7 +740,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -800,7 +786,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -841,7 +827,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -877,7 +863,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -908,7 +894,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -934,7 +920,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -954,7 +940,7 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -972,14 +958,14 @@ try:
 				filtered = raxmlGate(outPut_Folder,filtered)
 
 
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
 				cleanup(outPut_Folder)
 				
 			case "filtering done":
-				autoRAxML(outPut_Folder,RAXML_version,filtered)
+				autoRAxML(outPut_Folder,filtered)
 
 				mlTree(outPut_Folder)
 
@@ -1001,7 +987,7 @@ except:
 		create.write("start")
 	for file in fileList:
 		fileNum = file.split('/')[1].split('.')[0]
-		auto_hisat2(outPut_Folder, fileNum, threads)
+		auto_bowtie2(outPut_Folder, fileNum, threads)
 		with open(f'{outPut_Folder}/log.txt','w') as create:
 			create.write("autohisat2 done")
 
@@ -1057,8 +1043,7 @@ except:
 			
 	filtered = raxmlGate(outPut_Folder,filtered)
 
-
-	autoRAxML(outPut_Folder,RAXML_version,filtered)
+	autoRAxML(outPut_Folder,filtered)
 
 	mlTree(outPut_Folder)
 

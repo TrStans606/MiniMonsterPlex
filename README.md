@@ -1,13 +1,12 @@
 # MiniMonsterPlex
-MiniMonsterplex is an automatic variant calling pipeline. 
+MiniMonsterplex is an automatic variant calling pipeline for POSIX systems (Linux,macOS,Windows Subsystem Linux). It is recommended you use [Conda](https://docs.anaconda.com/miniconda/install/#quick-command-line-install) for setup.
 
 ## Table of Contents
 1. [Requirements](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#requirements)
 2. [Data Input](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#data-input)
 3. [Command Line Functions](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#command-line-functions)
 4. [Metadata Format](https://github.com/TrStans606/MiniMonsterPlex/tree/main#metadata-format)
-5. [RAXML Help](https://github.com/TrStans606/MiniMonsterPlex#raxml)
-6. [Tree building with MLtree](https://github.com/TrStans606/MiniMonsterPlex/tree/main#treebuilding-with-mltree)
+5. [Tree building with MLtree](https://github.com/TrStans606/MiniMonsterPlex/tree/main#treebuilding-with-mltree)
 
 ## Requirements 
 Install via Conda:
@@ -22,9 +21,12 @@ Install via Conda:
 * [Samtools](https://anaconda.org/bioconda/samtools)
 * [Bcftools](https://anaconda.org/bioconda/bcftools)
 * [BedTools](https://anaconda.org/bioconda/bedtools)
+* [RAXML](https://anaconda.org/bioconda/raxml)
 
-Build from source:
-* [Standard RAXML Sequential version:](https://github.com/stamatak/standard-RAxML)
+### Sample Conda command for setup
+```shell
+conda create --name monsterPlex bioconda::bowtie2 bioconda::tabix bioconda::samtools bioconda::bcftools bioconda::bedtools bioconda::raxml
+```
 
 ## Data Input
 Fastq files with either a .fq or .fastq extension should be gzip compressed, extension .gz, and dropped into the [fastq/](fastq) folder before running. If your files are all uncompressed try using this command in the [fastq/](fastq) folder to bulk compress them:
@@ -39,12 +41,11 @@ Depending on what extension your files are.
 
 ## Command Line Functions
 ```
-Python3 MiniMonsterPlex.py -o [output folder name/] -m [.csv metadata file name] -r [raxml binary name] -f [folder name/]-i [isolate_1] [isolate_2] -il [example.txt] -hf [host_1] [host_2] -hfl [example.txt] -h
+Python3 MiniMonsterPlex.py -o [output folder name/] -m [.csv metadata file name] -f [folder name/]-i [isolate_1] [isolate_2] -il [example.txt] -hf [host_1] [host_2] -hfl [example.txt] -h
 ```
 + ```-h```= Help command: including this flag will bring up the help screen.
 + ```-o```= Output Folder: User given name for the created output folder. When no option is used it defaults to output. **Note** you must must give the name of a non existant folder.
 + ```-m```= Metadata file: Name of the .csv metadata file formatted as shown below.
-+ ```-r```=Raxml version: the name of the standard raxml binary
 + ```-f```=Input Folder: the name of the folder where your fastq.gz input files are. Defaults to the fastq folder included with this repository
 
 Filtering options:
@@ -77,12 +78,6 @@ Non existant fields should be filled in with a period.
 **NOTE**: fields cannot have , or _ characters. These are used as seperator characters. If you input a seqid with _ characters they will all be replaced with - characters. 
 
 A sample csv file can be found as [metadata.csv](metadata.csv)
-
-## RAXML 
-* Build the Standard Sequential RAXML version listed in [Requirements](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#requirements) from source
-* The Standard, SSE3, or AVX version will work.
-* Move the created executable to the MiniMonsterPlex directory
-* provide the exact name of the RAXML binary as the -r argument
 
 ## TreeBuilding with MLtree
 
