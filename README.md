@@ -5,17 +5,20 @@ MiniMonsterplex is an automatic variant calling pipeline for POSIX systems (Linu
 1. [Requirements](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#requirements)
 2. [Data Input](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#data-input)
 3. [Command Line Functions](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#command-line-functions)
-4. [Metadata Format](https://github.com/TrStans606/MiniMonsterPlex/tree/main#metadata-format)
-5. [Tree building with MLtree](https://github.com/TrStans606/MiniMonsterPlex/tree/main#treebuilding-with-mltree)
+4. [R Wrapper]
+5. [Metadata Format](https://github.com/TrStans606/MiniMonsterPlex/tree/main#metadata-format)
+6. [Tree building with MLtree](https://github.com/TrStans606/MiniMonsterPlex/tree/main#treebuilding-with-mltree)
 
 ## Requirements 
 Install via Conda:
-* Python 3.6 or higher
+* Python 3.10 or higher
 * R 3.2.1 or higher
 * R package: [ape](https://cran.r-project.org/web/packages/ape/index.html)
 * R package: [ggrepel](https://cran.r-project.org/web/packages/ggrepel/index.html)
 * R Bioconductor package: [ggtree](https://bioconductor.org/packages/release/bioc/html/ggtree.html)
 * R package: [ggtext](https://cran.r-project.org/web/packages/ggtext/index.html)
+* R package: [glue](https://cran.r-project.org/web/packages/glue/index.html)
+* [radian](https://anaconda.org/conda-forge/radian)
 * [Bowtie2](https://anaconda.org/bioconda/bowtie2)
 * [Tabix](https://anaconda.org/bioconda/tabix)
 * [Samtools](https://anaconda.org/bioconda/samtools)
@@ -25,7 +28,10 @@ Install via Conda:
 
 ### Sample Conda command for setup
 ```shell
-conda create --name monsterPlex bioconda::bowtie2 bioconda::tabix bioconda::samtools bioconda::bcftools bioconda::bedtools bioconda::raxml
+conda create --name monsterPlex bioconda::bowtie2 bioconda::tabix bioconda::samtools bioconda::bcftools bioconda::bedtools bioconda::raxml conda-forge::r-base bioconda::bioconductor-ggtree conda-forge::r-ape conda-forge::r-ggrepel conda-forge::r-ggtext conda-forge::r-languageserver conda-forge::radian conda-forge::r-glue
+```
+```shell
+conda activate monsterPlex
 ```
 
 ## Data Input
@@ -59,7 +65,59 @@ NOTE: Isolate should be the name of the file you are uploading minus the extensi
 + ```-hf```= Host list[Optional]: a space separated list of all isolates from the specific hosts listed you want in tree building.
 + ```-hfl```= Host file[Optional]: a new line separated txt file of all hosts you want included in the tree building. This can be combined with -hf.
 
-The host and isolate filtering can be combined. In that case the program will first filter by host and then filter by isolate. 
+The host and isolate filtering can be combined. In that case the program will first filter by host and then filter by isolate.
+
+## R Wrapper
+
+MiniMonsterPlex now offers an R wrapper in the form of MiniMonsterPlexWrapper.r, which offers all of the same functionality in an interactive R environment. 
+
+1. Make sure you are in the conda environment created above:
+
+```shell
+conda activate monsterPlex
+```
+
+2. Type radian; this will bring you to the interactive environment:
+
+```shell
+radian
+```
+
+3. Source the R script:
+
+```r
+source("MiniMonsterPlexWrapper.r")
+```
+
+4. Answer the interactive questions:
+
+This is equivalent to the -o option above and is required:
+
+```Enter the output folder. The folder must not exist: ```
+
+This is equivalent to the -m option and is required. A sample metadata file is provided below:
+
+```Enter the metadata.csv file: ```
+
+This is equivalent to the -f option and is required. The folder provided is fastq:
+
+```Enter the input folder: ```
+
+This is equivalent to the -i option and is optional. Press enter to skip it:
+
+```Enter the space-separated isolate list. Optional push enter if you want to skip:```
+
+This is equivalent to the -il option and is optional. Press enter to skip it:
+
+```Enter the isolate list file. Optional push enter if you want to skip: ```
+
+This is equivalent to the -hf option and is optional. Press enter to skip it:
+
+```Enter the space-separated host list. Optional push enter if you want to skip: ```
+
+This is equivalent to the -hfl option and is optional. Press enter to skip it:
+
+```Enter the host list file. Optional push enter if you want to skip: ```
 
 ## Metadata Format
 
