@@ -5,7 +5,7 @@ MiniMonsterplex is an automatic variant calling pipeline for POSIX systems (Linu
 1. [Requirements](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#requirements)
 2. [Data Input](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#data-input)
 3. [Command Line Functions](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#command-line-functions)
-4. [R Wrapper]
+4. [R Wrapper](https://github.com/TrStans606/MiniMonsterPlex/tree/main#r-wrapper)
 5. [Metadata Format](https://github.com/TrStans606/MiniMonsterPlex/tree/main#metadata-format)
 6. [Tree building with MLtree](https://github.com/TrStans606/MiniMonsterPlex/tree/main#treebuilding-with-mltree)
 
