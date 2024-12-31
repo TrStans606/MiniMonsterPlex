@@ -128,7 +128,7 @@ def auto_bowtie2(outPut, fileNum,threads):
 			'-p',
 			str(threads),
 			'-x',
-			'index/70-15_index',
+			'index/70-15_small_index',
 			'-U',
 			file,
 			'--local --very-sensitive-local',
@@ -167,12 +167,12 @@ def auto_mpileup(outPut,fileNum,threads):
 			str(threads),
 			'-d',
 			'100000',
-			'-R',
-			'MonsterPlexRegionsFileSuperCont.txt',
+			#'-R',
+			#'MonsterPlexRegionsFileSuperCont.txt',
 			'--annotate',
 			'FORMAT/AD',
 			'-f',
-			'index/70-15.fasta.fasta',
+			'index/70-15_small.fasta',
 			f'{outPut}/{fileNum}hits.bam',
 			'>>',
 			f'{outPut}/{fileNum}.vcf']
@@ -266,7 +266,8 @@ def sampleBuilder(outPut):
 				for n in range(9,len(fqList)):
 					seqs.append([fqList[n], ''])
 					check = True
-			elif check and line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1] in sites:
+			#elif check:
+			elif check and line.strip('\n').split('\t')[0].split(':')[0] + ' ' + str(int(line.strip('\n').split('\t')[1]) + int(line.strip('\n').split('\t')[0].split(':')[1].split("-")[0])) in sites:
 				#this creates a horizontal split of the line
 				lineList = line.strip('\n').split('\t')
 				for n in range(9,len(lineList)):
