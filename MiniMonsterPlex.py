@@ -167,8 +167,8 @@ def auto_mpileup(outPut,fileNum,threads):
 			str(threads),
 			'-d',
 			'100000',
-			'-R',
-			'MonsterPlexRegionsFileSuperCont_small_index.txt',
+			#'-R',
+			#'MonsterPlexRegionsFileSuperCont_small_index.txt',
 			'--annotate',
 			'FORMAT/AD',
 			'-f',
@@ -252,10 +252,10 @@ def sampleBuilder(outPut):
 	sites =[]
 	sitesUsed =[]
 	#reads a list of sites you want and only looks at data from there
-	with open('MonsterPlexSitesList.txt', 'r') as read:
+	with open('MonsterPlexSitesList_small_index.txt', 'r') as read:
 		for line in read:
 			sites.append(line.strip('\n'))
-	
+
 	with open(f'{outPut}/seperateCall/{outPut}MergedCallAll.vcf', 'r') as read:
 		seqs = list()
 		check = False
@@ -267,7 +267,7 @@ def sampleBuilder(outPut):
 					seqs.append([fqList[n], ''])
 					check = True
 			#elif check:
-			elif check and line.strip('\n').split('\t')[0].split(':')[0] + ' ' + str(int(line.strip('\n').split('\t')[1]) + int(line.strip('\n').split('\t')[0].split(':')[1].split("-")[0])) in sites:
+			elif check and line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1] in sites:
 				#this creates a horizontal split of the line
 				lineList = line.strip('\n').split('\t')
 				for n in range(9,len(lineList)):
