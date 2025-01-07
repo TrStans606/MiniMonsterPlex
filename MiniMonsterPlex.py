@@ -128,7 +128,7 @@ def auto_bowtie2(outPut, fileNum,threads):
 			'-p',
 			str(threads),
 			'-x',
-			'index/70-15_index',
+			'index/70-15_small_index',
 			'-U',
 			file,
 			'--local --very-sensitive-local',
@@ -167,12 +167,12 @@ def auto_mpileup(outPut,fileNum,threads):
 			str(threads),
 			'-d',
 			'100000',
-			'-R',
-			'MonsterPlexRegionsFileSuperCont.txt',
+			#'-R',
+			#'MonsterPlexRegionsFileSuperCont_small_index.txt',
 			'--annotate',
 			'FORMAT/AD',
 			'-f',
-			'index/70-15.fasta.fasta',
+			'index/70-15_small.fasta',
 			f'{outPut}/{fileNum}hits.bam',
 			'>>',
 			f'{outPut}/{fileNum}.vcf']
@@ -252,10 +252,10 @@ def sampleBuilder(outPut):
 	sites =[]
 	sitesUsed =[]
 	#reads a list of sites you want and only looks at data from there
-	with open('MonsterPlexSitesList.txt', 'r') as read:
+	with open('MonsterPlexSitesList_small_index.txt', 'r') as read:
 		for line in read:
 			sites.append(line.strip('\n'))
-	
+
 	with open(f'{outPut}/seperateCall/{outPut}MergedCallAll.vcf', 'r') as read:
 		seqs = list()
 		check = False
@@ -266,6 +266,7 @@ def sampleBuilder(outPut):
 				for n in range(9,len(fqList)):
 					seqs.append([fqList[n], ''])
 					check = True
+			#elif check:
 			elif check and line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1] in sites:
 				#this creates a horizontal split of the line
 				lineList = line.strip('\n').split('\t')
