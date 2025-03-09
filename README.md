@@ -139,4 +139,4 @@ A sample csv file can be found as [metadata.csv](metadata.csv)
 
 ## TreeBuilding with MLtree
 
-![mlTree_sample](https://github.com/TrStans606/MiniMonsterPlex/assets/100236022/f6d01b13-eb93-42f3-80e8-d21ade5a5689)
+![mlTree_sample](https://github.com/TrStans606/MiniMonsterPlex/blob/main/sampleResults/tree_test_full_tree.png)
