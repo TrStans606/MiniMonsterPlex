@@ -123,15 +123,15 @@ This is equivalent to the -hfl option and is optional. Press enter to skip it:
 
 MiniMonsterPlex requires a custom .csv format for metadata:
 ```
-sampleID,species,host,lineage,country
-104,Po,Oryza,1,China
+sampleID,species,country,lineage,host
+104,Po,China,1,Oryza
 105,.,.,.,.
 ```
 * The ```sampleID``` is the exact same of the fastq file given to MiniMonsterPlex so in this example it would be *104.fastq*.
 * The ```species``` is the species name where the sequencing was done.
-* The ```host``` is the host of the pathogen
-* The ```lineage``` is the lineage of the pathogen.
 * The ```country``` is the country of origin.
+* The ```lineage``` is the lineage of the pathogen.
+* The ```host``` is the host of the pathogen.
 Non existant fields should be filled in with a period.
 **NOTE**: fields cannot have , or _ characters. These are used as seperator characters. If you input a seqid with _ characters they will all be replaced with - characters. 
 
