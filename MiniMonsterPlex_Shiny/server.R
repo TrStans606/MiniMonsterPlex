@@ -64,7 +64,7 @@ runMiniMonsterPlex <- function(output.folder,metadata.file,input.folder,isolate.
   command = glue('python MiniMonsterPlex.py -o {output.folder} -m {metadata.file} -f {input.folder} {isolate.list.command} {isolate.file.command} {host.list.command} {host.file.command}')
   
   # Execute the constructed command
-  system(command)
+  print(command)
   
 }
 

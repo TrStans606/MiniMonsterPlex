@@ -13,30 +13,14 @@ library(shiny)
 fluidPage(
 
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("MiniMonsterPlex"),
 
-    # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-        
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
-    ),
     textInput("output.folder", "Enter output folder here", value = "output",placeholder = "Must not already exist"),
     textInput("metadata.file", "Enter metadata_file here", value = "metadata.csv"),
     textInput("input.folder", "Enter input folder here", value = "fastq"),
-    textInput("isolate.list", "Enter a space seperated list of isolates you want included here", value = "A B C"),
-    textInput("isolate.file", "Enter a file containing a new line list of isolates you want included here", value = "isolates.txt"),
-    textInput("host.list", "Enter a space seperated list of hosts you want included here", value = "A B C"),
-    textInput("host.file", "Enter a file containing a new line list of hosts you want included here", value = "hosts.txt"),
+    textInput("isolate.list", "Enter a space seperated list of isolates you want included here", value = ""),
+    textInput("isolate.file", "Enter a file containing a new line list of isolates you want included here", value = ""),
+    textInput("host.list", "Enter a space seperated list of hosts you want included here", value = ""),
+    textInput("host.file", "Enter a file containing a new line list of hosts you want included here", value = ""),
     actionButton("myButton", "Run MiniMonsterPlex")
 )
