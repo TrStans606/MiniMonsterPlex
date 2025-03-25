@@ -1,24 +1,13 @@
-#
-# This is the server logic of a Shiny web application. You can run the
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
 library(shiny)
 library(glue)
-
-#server logic to run mini monsterplex
 
 runMiniMonsterPlex <- function(output.folder,metadata.file,input.folder,isolate.list,
                                isolate.file,host.list,host.file){
   # If the isolate list is empty, set it to NULL; otherwise, split it into a list
   if (isolate.list == "") {
-  	isolate.list = NULL
+    isolate.list = NULL
   } else {
-  	isolate.list = unlist(strsplit(isolate.list, " "))
+    isolate.list = unlist(strsplit(isolate.list, " "))
   }
   
   # If the isolate file is empty, set it to NULL
@@ -64,28 +53,45 @@ runMiniMonsterPlex <- function(output.folder,metadata.file,input.folder,isolate.
   command = glue('python MiniMonsterPlex.py -o {output.folder} -m {metadata.file} -f {input.folder} {isolate.list.command} {isolate.file.command} {host.list.command} {host.file.command}')
   
   # Execute the constructed command
-  print(command)
+  system(command)
   
 }
 
 
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+  
+  # Application title
+  titlePanel("MiniMonsterPlex"),
+  
+  textInput("output.folder", "Enter output folder here", value = "output",placeholder = "Must not already exist"),
+  textInput("metadata.file", "Enter metadata_file here", value = "metadata.csv"),
+  textInput("input.folder", "Enter input folder here", value = "fastq"),
+  textInput("isolate.list", "Enter a space seperated list of isolates you want included here. All will be included by default.", value = ""),
+  textInput("isolate.file", "Enter a file containing a new line list of isolates you want included here. All will be included by default.", value = ""),
+  textInput("host.list", "Enter a space seperated list of hosts you want included here. All will be included by default.", value = ""),
+  textInput("host.file", "Enter a file containing a new line list of hosts you want included here. All will be included by default.", value = ""),
+  actionButton("myButton", "Run MiniMonsterPlex")
+)
 
-# Define server logic required to draw a histogram
-function(input, output, session) {
+server <- # Define server logic required to draw a histogram
+  function(input, output, session) {
     observeEvent(input$myButton, {
       runMiniMonsterPlex(input$output.folder,input$metadata.file,input$input.folder,input$isolate.list,input$isolate.file,input$host.list,input$host.file)
     })
     output$distPlot <- renderPlot({
-
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-
+      
+      # generate bins based on input$bins from ui.R
+      x    <- faithful[, 2]
+      bins <- seq(min(x), max(x), length.out = input$bins + 1)
+      
+      # draw the histogram with the specified number of bins
+      hist(x, breaks = bins, col = 'darkgray', border = 'white',
+           xlab = 'Waiting time to next eruption (in mins)',
+           main = 'Histogram of waiting times')
+      
     })
+    
+  }
 
-}
+shinyApp(ui=ui, server = server)

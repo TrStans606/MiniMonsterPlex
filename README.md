@@ -5,9 +5,10 @@ MiniMonsterplex is an automatic variant calling pipeline for POSIX systems (Linu
 1. [Requirements](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#requirements)
 2. [Data Input](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#data-input)
 3. [Command Line Functions](https://github.com/TrStans606/MiniMonsterPlex/blob/main/README.md#command-line-functions)
-4. [R Wrapper](https://github.com/TrStans606/MiniMonsterPlex/tree/main#r-wrapper)
-5. [Metadata Format](https://github.com/TrStans606/MiniMonsterPlex/tree/main#metadata-format)
-6. [Tree building with MLtree](https://github.com/TrStans606/MiniMonsterPlex/tree/main#treebuilding-with-mltree)
+4. [R Shiny App]
+5. [R Wrapper](https://github.com/TrStans606/MiniMonsterPlex/tree/main#r-wrapper)
+6. [Metadata Format](https://github.com/TrStans606/MiniMonsterPlex/tree/main#metadata-format)
+7. [Tree building with MLtree](https://github.com/TrStans606/MiniMonsterPlex/tree/main#treebuilding-with-mltree)
 
 ## Requirements 
 Install via Conda:
@@ -28,7 +29,7 @@ Install via Conda:
 
 ### Sample Conda command for setup
 ```shell
-conda create --name monsterPlex bioconda::bowtie2 bioconda::tabix bioconda::samtools bioconda::bcftools bioconda::bedtools bioconda::raxml conda-forge::r-base bioconda::bioconductor-ggtree conda-forge::r-ape conda-forge::r-ggrepel conda-forge::r-ggtext conda-forge::r-languageserver conda-forge::radian conda-forge::r-glue
+conda create --name monsterPlex bioconda::bowtie2 bioconda::tabix bioconda::samtools bioconda::bcftools bioconda::bedtools bioconda::raxml conda-forge::r-base bioconda::bioconductor-ggtree conda-forge::r-ape conda-forge::r-ggrepel conda-forge::r-ggtext conda-forge::r-languageserver conda-forge::radian conda-forge::r-glue conda-forge::r-shiny
 ```
 ```shell
 conda activate monsterPlex
@@ -66,6 +67,29 @@ NOTE: Isolate should be the name of the file you are uploading minus the extensi
 + ```-hfl```= Host file[Optional]: a new line separated txt file of all hosts you want included in the tree building. This can be combined with -hf.
 
 The host and isolate filtering can be combined. In that case the program will first filter by host and then filter by isolate.
+
+## R Shiny App
+
+MiniMonsterPlex now offers an R shiny app version. 
+
+1. Make sure you are in the conda environment created above:
+
+```shell
+conda activate monsterPlex
+```
+
+2. Type radian; this will bring you to the interactive environment:
+
+```shell
+radian
+```
+
+3. Type shiny::runApp(); this will pull up the app in your browser. 
+```R
+shiny::runApp()
+```
+
+4. Fill out all of the fields. The defaults are filled out for you if you desire to make no changes.
 
 ## R Wrapper
 
