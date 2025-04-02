@@ -1,6 +1,6 @@
 library(shiny)
 library(glue)
-
+options(shiny.maxRequestSize = 100*1024^2)
 runMiniMonsterPlex <- function(output.folder,metadata.file,input.folder,isolate.list,
                                isolate.file,host.list,host.file){
   # If the isolate list is empty, set it to NULL; otherwise, split it into a list
@@ -64,6 +64,12 @@ ui <- fluidPage(
   # Application title
   titlePanel("MiniMonsterPlex"),
   
+  fileInput("fastq_files", "Upload the data you want anaylazed:",multiple = TRUE),
+  fileInput("metadata_upload", "Upload a metadata file"),
+  fileInput("isolate_upload", "Upload a isolate file"),
+  fileInput("hosts_upload", "Upload a hosts file"),
+  actionButton("copyBtn", "Upload Files"),
+  
   textInput("output.folder", "Enter output folder here", value = "output",placeholder = "Must not already exist"),
   textInput("metadata.file", "Enter metadata_file here", value = "metadata.csv"),
   textInput("input.folder", "Enter input folder here", value = "fastq"),
@@ -76,21 +82,28 @@ ui <- fluidPage(
 
 server <- # Define server logic required to draw a histogram
   function(input, output, session) {
+    observeEvent(input$copyBtn, {
+      req(input$fastq_files)
+      fastq_upload <- input$fastq_files
+      for(i in 1:length(fastq_upload$datapath)){
+        file.copy(fastq_upload$datapath[i], file.path(getwd(), 'fastq',fastq_upload$name[i]))
+      }
+      req(input$metadata_upload)
+      metadata_file <- input$metadata_upload
+      file.copy(metadata_file$datapath, file.path(getwd(), metadata_file$name))
+      
+      req(input$isolate_upload)
+      isolates_file <- input$isolate_upload
+      file.copy(isolates_file$datapath, file.path(getwd(), isolates_file$name))
+      
+      req(input$hosts_upload)
+      hosts_file <- input$hosts_upload
+      file.copy(hosts_file$datapath, file.path(getwd(), hosts_file$name))
+    })
     observeEvent(input$myButton, {
       runMiniMonsterPlex(input$output.folder,input$metadata.file,input$input.folder,input$isolate.list,input$isolate.file,input$host.list,input$host.file)
     })
-    output$distPlot <- renderPlot({
-      
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2]
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white',
-           xlab = 'Waiting time to next eruption (in mins)',
-           main = 'Histogram of waiting times')
-      
-    })
+
     
   }
 
