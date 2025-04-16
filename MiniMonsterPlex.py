@@ -10,6 +10,7 @@ import glob
 import subprocess 
 import argparse
 import multiprocessing
+import shutil
 
 #setting up arg parsing for the output folder
 parser = argparse.ArgumentParser(
@@ -97,6 +98,16 @@ parser.add_argument(
 	required=False
 )
 
+#command line option for filtering by specific hosts
+parser.add_argument(
+	'--complete',
+	action='store_true',
+	help=(
+		'If you want to run an analysis combining all past results'
+	),
+	required=False
+)
+
 #command line option for uncompressed files
 #parser.add_argument(
 #	 '-gz',
@@ -116,6 +127,7 @@ included_isolates = args.i
 included_isolates_file = args.il
 included_hosts = args.hf
 included_hosts_file = args.hfl
+complete = args.complete
 threads = multiprocessing.cpu_count()
 if threads > 8:
 	threads =8
@@ -516,57 +528,75 @@ def mlTree(outPut_Folder):
 	                        check=True)
 	with open(f'{outPut_Folder}/log.txt','w') as create:
 			create.write("mltree done")
-
+#series of lines for cleaing up left over temp data
 def cleanup(outPut):
-	command =['mv', 
-			f'{input_folder}/*.gz',
-			'completed_fastq/']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
-	command = ['rm',
-			f'{outPut_Folder}/*.bam']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
+	files_to_move = glob.glob(os.path.join(input_folder,'*.gz'))
+	for file in files_to_move:
+		shutil.move(file,'completed_fastq/')
+
+	files_to_delete = glob.glob(os.path.join(outPut,'*.bam'))
+	for file in files_to_delete:
+		os.remove(file)
+
+	with open('totalMergedCall.vcf', 'a') as f:
+		with open(f'{outPut}/seperateCall/{outPut}MergedCallAll.vcf','r') as read:
+			for line in read:
+				f.write(line)
+
 	
-	command = ['cat',
-			f'{outPut}/seperateCall/{outPut}MergedCallAll.vcf',
-			'>>',
-			'totalMergedCall.vcf']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
 	command = ['bgzip',
 			f'{outPut}/seperateCall/{outPut}MergedCallAll.vcf']
 	subprocess.run(' '.join(command),
 				shell=True,
 				check=True)
-	command = ['mv',
-			f'{outPut}/seperateCall/{outPut}MergedCallAll.vcf.gz',
-			'processed_vcf/']
-	subprocess.run(' '.join(command),
+	shutil.move(f'{outPut}/seperateCall/{outPut}MergedCallAll.vcf.gz','processed_vcf/')
+
+	files_to_delete = glob.glob(os.path.join(outPut,'*.*'))
+	for file in files_to_delete:
+		os.remove(file)
+	
+	shutil.rmtree(f'{outPut}/seperateCall/')
+	shutil.rmtree(f'{outPut}/Coverage/')
+	
+	with open('totalFasta.mfa','a') as f:
+		with open(f'{outPut}/built_fasta/{outPut}builtSeqMeta.fasta','r') as read:
+			for line in read:
+				f.write(line)
+	#does the combined anyalysis of all the data
+	if complete:
+		command = ['raxmlHPC',
+			 '-p',
+			 '1234',
+			 '-f',
+			 'a',
+			 '-x',
+			 '1234',
+			 '-s',
+			 'totalFasta.mfa',
+			 '-n',
+			 'miniMonsterPlex_full.raxml',
+			 '-m',
+			 'GTRGAMMA',
+			 '-#',
+			 '1000']
+		subprocess.run(' '.join(command),
+				 shell=True,
+				 check=True)
+		command = ['Rscript',
+		   '--vanilla',
+		   'MLtree.R',
+		   'RAxML_bestTree.miniMonsterPlex_full.raxml']
+		subprocess.run(' '.join(command),
 				shell=True,
 				check=True)
-	command = ['rm',
-			f'{outPut}/*.*',]
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
-	command = ['rm',
-			'-r',
-			f'{outPut}/seperateCall/',
-			f'{outPut}/Coverage/']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
-	command = ['cat',
-			f'{outPut}/built_fasta/{outPut}builtSeqMeta.fasta',
-			'>>',
-			'totalFasta.mfa']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
+		files_to_delete = glob.glob(os.path.join(os.getcwd(),'*.raxml'))
+		for file in files_to_delete:
+			os.remove(file)
+		files_to_delete = glob.glob(os.path.join(os.getcwd(),'*.raxml.support'))
+		for file in files_to_delete:
+			os.remove(file)
+
+		
 #	os.remove(f'{outPut_Folder}/log.txt')
 		
 #if gzipped:
