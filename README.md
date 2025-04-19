@@ -48,12 +48,13 @@ Depending on what extension your files are.
 
 ## Command Line Functions
 ```
-Python3 MiniMonsterPlex.py -o [output folder name/] -m [.csv metadata file name] -f [folder name/]-i [isolate_1] [isolate_2] -il [example.txt] -hf [host_1] [host_2] -hfl [example.txt] -h
+Python3 MiniMonsterPlex.py -o [output folder name/] -m [.csv metadata file name] -f [folder name/] --complete -i [isolate_1] [isolate_2] -il [example.txt] -hf [host_1] [host_2] -hfl [example.txt] -h
 ```
 + ```-h```= Help command: including this flag will bring up the help screen.
 + ```-o```= Output Folder: User given name for the created output folder. When no option is used it defaults to output. **Note** you must must give the name of a non existant folder.
 + ```-m```= Metadata file: Name of the .csv metadata file formatted as shown below.
 + ```-f```=Input Folder: the name of the folder where your fastq.gz input files are. Defaults to the fastq folder included with this repository
++ ```--complete```= builds a tree comparing your current run to data base of all your past ones.
 
 Filtering options:
 

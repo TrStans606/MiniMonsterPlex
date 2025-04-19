@@ -29,6 +29,15 @@ while (input.folder == "") {
 		print("The input folder is required.")
 	}
 }
+#prompt user if they want a complete analysis
+complete = readline(prompt = "Do you want to compare your results against a pre existing database? (Y/N)")
+
+if (toupper(complete)== "Y"){
+  complete = "--complete"
+} else {
+  complete = ""
+}
+
 # Prompt the user to enter the space-separated isolate list (optional)
 isolate.list = readline(prompt="Enter the space separated isolate list. Optional push enter if you want to skip: ")
 
