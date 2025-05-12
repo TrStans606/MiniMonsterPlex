@@ -649,6 +649,7 @@ else:
 					check=True)
 
 if os.path.isdir(os.path.join(outPut_Folder,'mpileup_out')):
+	print('Mpileup already done: Skipping')
 	pass
 else:
 	for file in fileList:
@@ -661,6 +662,7 @@ else:
 
 
 if os.path.isdir(os.path.join(outPut_Folder,'call_out')):
+	print('BCFtools Call already done: Skipping')
 	pass
 else:
 	for file in fileList:
@@ -670,7 +672,9 @@ else:
 	call_list = glob.glob(os.path.join(outPut_Folder,'*call.vcf'))
 	for call in call_list:
 		shutil.move(call,os.path.join(outPut_Folder,'call_out'))
+
 if os.path.isdir(os.path.join(outPut_Folder,'coverage_out')):
+	print('Bedtools already done: Skipping')
 	pass
 else:
 	for file in fileList:
@@ -689,11 +693,13 @@ for file in fileList:
 	autoVCFZip(outPut_Folder, file, fileNum)
 
 if os.path.isdir(os.path.join(outPut_Folder,'merge_out')):
+	print('Merge already done: Skipping')
 	pass
 else:
 	autoMerge(outPut_Folder)
 
 if os.path.isdir(os.path.join(outPut_Folder,'built_fasta')):
+	print('Fasta already built: Skipping')
 	pass
 else:
 	sampleBuilder(outPut_Folder)
