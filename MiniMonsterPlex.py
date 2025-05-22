@@ -135,76 +135,104 @@ if threads > 8:
 #gzipped = args.gz
 
 def auto_bowtie2(outPut, fileNum,threads):
-	print(fileNum, " is entering the pipeline")
-	#histat 2 + samtools sort call
-	command = ['bowtie2 --no-unal',
-			'-p',
-			str(threads),
-			'-x',
-			'index/70-15_small_index',
-			'-U',
-			file,
-			'--local --very-sensitive-local',
-			'|',
-			'samtools',
-			'sort',
-			'-',
-			'-@',
-			'2',
-			'-O',
-			'bam',
-			'-o',
-			f'{outPut}/{fileNum}hits.bam']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
+	try:
+		print(fileNum, " is entering the pipeline")
+		#histat 2 + samtools sort call
+		command = ['bowtie2 --no-unal',
+				'-p',
+				str(threads),
+				'-x',
+				'index/70-15_small_index',
+				'-U',
+				file,
+				'--local --very-sensitive-local',
+				'|',
+				'samtools',
+				'sort',
+				'-',
+				'-@',
+				'2',
+				'-O',
+				'bam',
+				'-o',
+				f'{outPut}/{fileNum}hits.bam']
+		subprocess.run(' '.join(command),
+					shell=True,
+					check=True)
+	except Exception as e:
+		files_to_remove = glob.glob(os.path.join(outPut,'*.bam'))
+		for removed in files_to_remove:
+			os.remove(removed)
+		print(f"Something Went wrong with bowtie2 :{e}")
+		quit()
 
 
-def auto_mpileup(outPut,fileNum,threads):
-	command = ['bcftools',
-			'mpileup',
-			'--threads',
-			str(threads),
-			'-d',
-			'100000',
-			#'-R',
-			#'MonsterPlexRegionsFileSuperCont_small_index.txt',
-			'--annotate',
-			'FORMAT/AD',
-			'-f',
-			'index/70-15_small.fasta',
-			os.path.join(outPut,'bowtie_out',f'{fileNum}hits.bam'),
-			'>>',
-			f'{outPut}/{fileNum}.vcf']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
+def auto_mpileup(outPut, fileNum, threads):
+    try:
+        command = ['bcftools',
+                'mpileup',
+                '--threads',
+                str(threads),
+                '-d',
+                '100000',
+                #'-R',
+                #'MonsterPlexRegionsFileSuperCont_small_index.txt',
+                '--annotate',
+                'FORMAT/AD',
+                '-f',
+                'index/70-15_small.fasta',
+                os.path.join(outPut,'bowtie_out',f'{fileNum}hits.bam'),
+                '>>',
+                f'{outPut}/{fileNum}.vcf']
+        subprocess.run(' '.join(command),
+                    shell=True,
+                    check=True)
+    except Exception as e:
+        files_to_remove = glob.glob(os.path.join(outPut, '*.vcf'))
+        for removed in files_to_remove:
+            os.remove(removed)
+        print(f"Something went wrong with bcftools mpileup: {e}")
+        quit()
 	
-def auto_call(outPut,fileNum):
-	command = ['bcftools',
-			'call',
-			'-c',
-			'--ploidy',
-			'1',
-			os.path.join(outPut,'mpileup_out',f'{fileNum}.vcf'),
-			'-o',
-			f'{outPut}/{fileNum}call.vcf']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
+def auto_call(outPut, fileNum):
+    try:
+        command = ['bcftools',
+                'call',
+                '-c',
+                '--ploidy',
+                '1',
+                os.path.join(outPut, 'mpileup_out', f'{fileNum}.vcf'),
+                '-o',
+                f'{outPut}/{fileNum}call.vcf']
+        subprocess.run(' '.join(command),
+                    shell=True,
+                    check=True)
+    except Exception as e:
+        files_to_remove = glob.glob(os.path.join(outPut, '*call.vcf'))
+        for removed in files_to_remove:
+            os.remove(removed)
+        print(f"Something went wrong with bcftools call: {e}")
+        quit()
 
 	
-def auto_bedtools(outPut,fileNum):
-	command = ['bedtools',
-			'genomecov',
-			'-ibam',
-			os.path.join(outPut,'bowtie_out',f'{fileNum}hits.bam'),
-			'-bg',
-			'>',
-			f'{outPut}/{fileNum}cover.bed']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
+def auto_bedtools(outPut, fileNum):
+    try:
+        command = ['bedtools',
+                'genomecov',
+                '-ibam',
+                os.path.join(outPut, 'bowtie_out', f'{fileNum}hits.bam'),
+                '-bg',
+                '>',
+                f'{outPut}/{fileNum}cover.bed']
+        subprocess.run(' '.join(command),
+                    shell=True,
+                    check=True)
+    except Exception as e:
+        files_to_remove = glob.glob(os.path.join(outPut, '*cover.bed'))
+        for removed in files_to_remove:
+            os.remove(removed)
+        print(f"Something went wrong with bedtools genomecov: {e}")
+        quit()
 
 def auto_bgzip(outPut, fileNum,file_ex):
 	command =['bgzip',
@@ -235,17 +263,24 @@ def autoVCFZip(outPut, file, fileNum):
 		append.write(f'{outPut}/call_out/' + file.split('/')[1].split('.')[0] + 'call.vcf.gz\n')
 
 def autoMerge(outPut):
-	command = ['bcftools',
-			'merge',
-			'-l',
-			f'{outPut}/fastqListCall.txt',
-			'-o',
-			f'{outPut}/call_out/{outPut}MergedCallAll.vcf']
-	subprocess.run(' '.join(command),
-				shell=True,
-				check=True)
-	os.mkdir(os.path.join(outPut_Folder,'merge_out'))
-	shutil.move(f'{outPut}/call_out/{outPut}MergedCallAll.vcf',os.path.join(outPut,'merge_out'))
+    try:
+        command = ['bcftools',
+                'merge',
+                '-l',
+                f'{outPut}/fastqListCall.txt',
+                '-o',
+                f'{outPut}/call_out/{outPut}MergedCallAll.vcf']
+        subprocess.run(' '.join(command),
+                    shell=True,
+                    check=True)
+        os.mkdir(os.path.join(outPut_Folder, 'merge_out'))
+        shutil.move(f'{outPut}/call_out/{outPut}MergedCallAll.vcf', os.path.join(outPut, 'merge_out'))
+    except Exception as e:
+        files_to_remove = glob.glob(os.path.join(outPut, 'call_out', '*MergedCallAll.vcf'))
+        for removed in files_to_remove:
+            os.remove(removed)
+        print(f"Something went wrong with bcftools merge: {e}")
+        quit()
 
 		
 def sampleBuilder(outPut):
@@ -255,112 +290,117 @@ def sampleBuilder(outPut):
 	with open('MonsterPlexSitesList_small_index.txt', 'r') as read:
 		for line in read:
 			sites.append(line.strip('\n'))
-
-	with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf', 'r') as read:
-		seqs = list()
-		check = False
-		for line in read:
-			if line.split('\t')[0] == '#CHROM':
-				print("header past seqs made")
-				fqList = line.split('\t')
-				for n in range(9,len(fqList)):
-					seqs.append([fqList[n], ''])
-					check = True
-			#elif check:
-			elif check and line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1] in sites:
-				#this creates a horizontal split of the line
-				lineList = line.strip('\n').split('\t')
-				for n in range(9,len(lineList)):
-					fields = lineList[n].split(':')
-					if fields[0] == '.':
-						seqs[n - 9][1] += "N"
-					elif len(fields[2].split(',')) == 1:
-						if fields[0] == '0':
-							if int(fields[2]) > 5:
+	try:
+		with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf', 'r') as read:
+			seqs = list()
+			check = False
+			for line in read:
+				if line.split('\t')[0] == '#CHROM':
+					print("header past seqs made")
+					fqList = line.split('\t')
+					for n in range(9,len(fqList)):
+						seqs.append([fqList[n], ''])
+						check = True
+				#elif check:
+				elif check and line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1] in sites:
+					#this creates a horizontal split of the line
+					lineList = line.strip('\n').split('\t')
+					for n in range(9,len(lineList)):
+						fields = lineList[n].split(':')
+						if fields[0] == '.':
+							seqs[n - 9][1] += "N"
+						elif len(fields[2].split(',')) == 1:
+							if fields[0] == '0':
+								if int(fields[2]) > 5:
+									seqs[n - 9][1] += lineList[3]
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								else:
+									seqs[n - 9][1] += "N"
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								#this checks alt
+							elif fields[0] == '1':
+								if int(fields[2]) > 5:
+									seqs[n - 9][1] += lineList[4]
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								else:
+									seqs[n - 9][1] += "N"
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+							else:
+								print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
+								print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								quit()
+						#this checks cases were both ref and alt are registered
+						elif len(fields[2].split(',')) >= 2:
+							#this creates a list out of the AD field
+							AD = fields[2].split(',')
+							#this checks if ref is blank
+							if AD[0] == '.':
+								if int(AD[1]) > 5:
+									seqs[n - 9][1] += lineList[4].split(',')[0]
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								else:
+									seqs[n - 9][1] += "N"
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+							#this checks if alt is blank
+							elif AD[1] == '.':
+								if int(AD[0]) > 5:
+									seqs[n - 9][1] += lineList[3]
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								else:
+									seqs[n - 9][1] += "N"
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+							#checks if ref is greater then alt
+							elif int(AD[0]) > int(AD[1]):
+								if int(AD[0]) > (int(AD[1]) * 20):
+									seqs[n - 9][1] += lineList[3]
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								else:
+									seqs[n - 9][1] += "N"
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+							#checks if alt is greater than ref
+							elif int(AD[1]) > int(AD[0]):
+								if int(AD[1]) > (int(AD[0]) * 20):
+									seqs[n - 9][1] += lineList[4].split(',')[0]
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								else:
+									seqs[n - 9][1] += "N"
+									sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+							elif int(AD[1]) == int(AD[0]):
 								seqs[n - 9][1] += lineList[3]
 								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
 							else:
-								seqs[n - 9][1] += "N"
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							#this checks alt
-						elif fields[0] == '1':
-							if int(fields[2]) > 5:
-								seqs[n - 9][1] += lineList[4]
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							else:
-								seqs[n - 9][1] += "N"
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
+								print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
+								quit()
 						else:
 							print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
 							print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
 							quit()
-					#this checks cases were both ref and alt are registered
-					elif len(fields[2].split(',')) >= 2:
-						#this creates a list out of the AD field
-						AD = fields[2].split(',')
-						#this checks if ref is blank
-						if AD[0] == '.':
-							if int(AD[1]) > 5:
-								seqs[n - 9][1] += lineList[4].split(',')[0]
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							else:
-								seqs[n - 9][1] += "N"
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-						#this checks if alt is blank
-						elif AD[1] == '.':
-							if int(AD[0]) > 5:
-								seqs[n - 9][1] += lineList[3]
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							else:
-								seqs[n - 9][1] += "N"
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-						#checks if ref is greater then alt
-						elif int(AD[0]) > int(AD[1]):
-							if int(AD[0]) > (int(AD[1]) * 20):
-								seqs[n - 9][1] += lineList[3]
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							else:
-								seqs[n - 9][1] += "N"
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-						#checks if alt is greater than ref
-						elif int(AD[1]) > int(AD[0]):
-							if int(AD[1]) > (int(AD[0]) * 20):
-								seqs[n - 9][1] += lineList[4].split(',')[0]
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							else:
-								seqs[n - 9][1] += "N"
-								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-						elif int(AD[1]) == int(AD[0]):
-							seqs[n - 9][1] += lineList[3]
-							sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-						else:
-							print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
-							print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							quit()
-					else:
-						print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
-						print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-						quit()
-	sample_metadata = metaDataBuilder(metadata_file_name)
-	
-	print(sample_metadata)
-	
-	os.mkdir(f'{outPut}/built_fasta')
-	
-	with open(f'{outPut}/built_fasta/{outPut}builtSeqMeta.fasta', 'a') as writeSeq:
-		for read in seqs:
-			seqID = read[0].split('/')[2].split('.')[0].split('hits')[0]
-			if len(seqID.split("_")) > 1:
-				seqID = f'{"-".join(seqID.split("_"))}'
-			if (seqID) in sample_metadata:
-				seqSpecies = sample_metadata[seqID][0]
-				seqHost = sample_metadata[seqID][1]
-				seqLineage = sample_metadata[seqID][2]
-				seqCountry = sample_metadata[seqID][3]
-				writeSeq.write(f'>{seqID}_{seqSpecies}_{seqHost}_{seqLineage}_{seqCountry}\n{read[1]}\n')
-			else:
-				writeSeq.write('>' + seqID
-							   + '_._._._.' + '\n' + read[1] + '\n')
+		sample_metadata = metaDataBuilder(metadata_file_name)
+		
+		print(sample_metadata)
+		
+		os.mkdir(f'{outPut}/built_fasta')
+		
+		with open(f'{outPut}/built_fasta/{outPut}builtSeqMeta.fasta', 'a') as writeSeq:
+			for read in seqs:
+				seqID = read[0].split('/')[2].split('.')[0].split('hits')[0]
+				if len(seqID.split("_")) > 1:
+					seqID = f'{"-".join(seqID.split("_"))}'
+				if (seqID) in sample_metadata:
+					seqSpecies = sample_metadata[seqID][0]
+					seqHost = sample_metadata[seqID][1]
+					seqLineage = sample_metadata[seqID][2]
+					seqCountry = sample_metadata[seqID][3]
+					writeSeq.write(f'>{seqID}_{seqSpecies}_{seqHost}_{seqLineage}_{seqCountry}\n{read[1]}\n')
+				else:
+					writeSeq.write('>' + seqID
+								+ '_._._._.' + '\n' + read[1] + '\n')
+	except Exception as e:
+		if os.path.isdir(os.path.join(outPut_Folder,'built_fasta')):
+			shutil.rmtree(f'{outPut}/built_fasta')
+		print(f"Something went wrong with fasta building: {e}")
+		quit()
 						
 def metaDataBuilder(metadata_file):
 	metaData = {}
@@ -511,33 +551,16 @@ def cleanup(outPut):
 	for file in files_to_move:
 		shutil.move(file,'completed_fastq/')
 
-	# files_to_delete = glob.glob(os.path.join(outPut,'bowtie_out','*.*'))
-	# for file in files_to_delete:
-	# 	os.remove(file)
-
 	with open('totalMergedCall.vcf', 'a') as f:
 		with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf','r') as read:
 			for line in read:
 				f.write(line)
-
-	
-	# command = ['bgzip',
-	# 		f'{outPut}/merge_out/{outPut}MergedCallAll.vcf']
-	# subprocess.run(' '.join(command),
-	# 			shell=True,
-	# 			check=True)
-	# shutil.move(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz','processed_vcf/')
-
 
 	with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf', 'rb') as f_in:
 		with gzip.open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz', 'wb') as f_out:
 			shutil.copyfileobj(f_in, f_out)
 	shutil.move(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz','processed_vcf/')
 
-	# files_to_delete = glob.glob(os.path.join(outPut,'*.*'))
-	# for file in files_to_delete:
-	# 	os.remove(file)
-	
 	shutil.rmtree(f'{outPut}/bowtie_out/')
 	shutil.rmtree(f'{outPut}/coverage_out/')
 	shutil.rmtree(f'{outPut}/call_out/')
@@ -583,25 +606,6 @@ def cleanup(outPut):
 		files_to_delete = glob.glob(os.path.join(os.getcwd(),'*.raxml.support'))
 		for file in files_to_delete:
 			os.remove(file)
-
-		
-#	os.remove(f'{outPut_Folder}/log.txt')
-		
-#if gzipped:
-#	 fileList = glob.glob('fastq/*.gz')
-#elif gzipped == False:
-#	 fileListTemp = glob.glob('fastq/*.fastq')
-#	 fileList2 = glob.glob('fastq/*.fq')
-#	 for file in fileList2:
-#		 fileListTemp.append(file)
-#	 fileList =[]
-#	 for file in fileList:
-#		 command = ['bgzip',
-#					f'fastq/{file}']
-#		 subprocess.run(' '.join(command),
-#						shell=True,
-#						check=True)
-#		 fileList.append(file + '.gz')
 
 #this makes it so you can use the -i and -il commands at the same time
 if included_isolates == None:
