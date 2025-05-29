@@ -717,6 +717,15 @@ def main():
 	filtered = False
 	fileList = glob.glob(f'{input_folder}/*.gz')
 
+	# Print a tabular summary of key variables (project, metadata_file, outPut_Folder, inPut_Folder, complete)
+	print(f"{'Variable':<20} {'Value'}")
+	print(f"{'-'*20} {'-'*40}")
+	print(f"{'Project':<20} {outPut_Folder}")
+	print(f"{'Metadata File':<20} {metadata_file_name}")
+	print(f"{'Output Folder':<20} {outPut_Folder}")
+	print(f"{'Input Folder':<20} {input_folder}")
+	print(f"{'Complete mode':<20} {complete}")
+
 	if os.path.isdir(outPut_Folder):
 		pass
 	else:
