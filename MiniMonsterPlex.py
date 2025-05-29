@@ -742,20 +742,23 @@ def main():
 			out_file.write(summary_string + "\n")
 
 		#capture more error info about subprocess commands
-		try:
-			command = ['tabix',
-			os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam')]
-			subprocess.run(' '.join(command),
-					shell=True,
-					check=True,
-					capture_output=True)
-		except subprocess.CalledProcessError as e:
-			if os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.tbi')):
-				os.remove(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.tbi'))
-			print(f'Issue with file: {fileNum}')
-			print(f'Errror running command: {e}')
-			print(f"Something Went wrong with tabix :{e.stderr}")
-			quit()
+		if os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.csi')):
+			print(f"{fileNum} has already been tabixed")
+		else:
+			try:
+				command = ['tabix',
+				os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam')]
+				subprocess.run(' '.join(command),
+						shell=True,
+						check=True,
+						capture_output=True)
+			except subprocess.CalledProcessError as e:
+				if os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.csi')):
+					os.remove(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.csi'))
+				print(f'Issue with file: {fileNum}')
+				print(f'Errror running command: {e}')
+				print(f"Something Went wrong with tabix :{e.stderr}")
+				quit()
 
 		if os.path.isfile(os.path.join(outPut_Folder,'mpileup_out',f'{fileNum}.vcf')):
 			print(f'File {fileNum} has already been processed by mpileup')
