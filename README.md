@@ -29,7 +29,7 @@ Install via Conda:
 
 ### Sample Conda command for setup
 ```shell
-conda create --name monsterPlex bioconda::bowtie2 bioconda::tabix bioconda::samtools bioconda::bcftools bioconda::bedtools bioconda::raxml conda-forge::r-base bioconda::bioconductor-ggtree conda-forge::r-ape conda-forge::r-ggrepel conda-forge::r-ggtext conda-forge::r-languageserver conda-forge::radian conda-forge::r-glue conda-forge::r-shiny
+conda env create -f environment.yml
 ```
 ```shell
 conda activate monsterPlex
@@ -79,10 +79,10 @@ MiniMonsterPlex now offers an R shiny app version.
 conda activate monsterPlex
 ```
 
-2. Type radian; this will bring you to the interactive environment:
+2. Type r; this will bring you to the interactive environment:
 
 ```shell
-radian
+r
 ```
 
 3. Type shiny::runApp(); this will pull up the app in your browser. 
@@ -102,10 +102,10 @@ MiniMonsterPlex now offers an R wrapper in the form of MiniMonsterPlexWrapper.r,
 conda activate monsterPlex
 ```
 
-2. Type radian; this will bring you to the interactive environment:
+2. Type r; this will bring you to the interactive environment:
 
 ```shell
-radian
+r
 ```
 
 3. Source the R script:
