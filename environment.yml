@@ -90,6 +90,7 @@ dependencies:
   - mpfr=4.2.1=hb693164_3
   - ncurses=6.5=h5e97a16_3
   - openssl=3.5.0=h81ee809_1
+  - pandoc=3.7.0.2=hce30654_0
   - pango=1.56.3=h5fd7515_1
   - pcre2=10.44=ha881caa_2
   - perl=5.32.1=7_h4614cfb_perl5
@@ -115,11 +116,13 @@ dependencies:
   - r-commonmark=1.9.5=r44h570997c_0
   - r-cpp11=0.5.2=r44h785f33e_1
   - r-crayon=1.5.3=r44hc72bb7e_1
+  - r-crosstalk=1.2.1=r44hc72bb7e_1
   - r-curl=6.2.2=r44h95ef94e_0
   - r-cyclocomp=1.1.1=r44hc72bb7e_1
   - r-desc=1.4.3=r44hc72bb7e_1
   - r-digest=0.6.37=r44hd76f289_0
   - r-dplyr=1.1.4=r44hd76f289_1
+  - r-dt=0.33=r44hc72bb7e_1
   - r-ellipsis=0.3.2=r44h07cda29_3
   - r-evaluate=1.0.3=r44hc72bb7e_0
   - r-fansi=1.0.6=r44h07cda29_1
@@ -127,18 +130,22 @@ dependencies:
   - r-fastmap=1.2.0=r44hd76f289_1
   - r-fontawesome=0.5.3=r44hc72bb7e_0
   - r-fs=1.6.6=r44h31118f2_0
+  - r-future=1.49.0=r44h785f33e_0
   - r-generics=0.1.4=r44hc72bb7e_0
   - r-ggfun=0.1.8=r44hc72bb7e_0
   - r-ggplot2=3.5.2=r44hc72bb7e_0
   - r-ggplotify=0.1.2=r44hc72bb7e_1
   - r-ggrepel=0.9.6=r44hdd833ad_0
   - r-ggtext=0.1.2=r44hc72bb7e_3
+  - r-globals=0.18.0=r44hc72bb7e_0
   - r-glue=1.8.0=r44h0d9a900_0
   - r-gridgraphics=0.5_1=r44hc72bb7e_3
   - r-gridtext=0.1.5=r44hd76f289_3
   - r-gtable=0.3.6=r44hc72bb7e_0
+  - r-here=1.0.1=r44hc72bb7e_3
   - r-highr=0.11=r44hc72bb7e_1
   - r-htmltools=0.5.8.1=r44hd76f289_1
+  - r-htmlwidgets=1.6.4=r44h785f33e_3
   - r-httpuv=1.6.15=r44hd76f289_1
   - r-httr2=1.1.2=r44hc72bb7e_0
   - r-isoband=0.2.7=r44hd76f289_3
@@ -153,6 +160,7 @@ dependencies:
   - r-lazyeval=0.2.2=r44h07cda29_5
   - r-lifecycle=1.0.4=r44hc72bb7e_1
   - r-lintr=3.2.0=r44hc72bb7e_0
+  - r-listenv=0.9.1=r44hc72bb7e_1
   - r-litedown=0.7=r44hc72bb7e_0
   - r-magrittr=2.0.3=r44h07cda29_3
   - r-markdown=2.0=r44hc72bb7e_0
@@ -164,6 +172,7 @@ dependencies:
   - r-munsell=0.5.1=r44hc72bb7e_1
   - r-nlme=3.1_168=r44he0ea626_0
   - r-openssl=2.3.3=r44h3814a5a_0
+  - r-parallelly=1.44.0=r44h570997c_0
   - r-patchwork=1.3.0=r44hc72bb7e_0
   - r-pillar=1.10.2=r44hc72bb7e_0
   - r-pkgbuild=1.4.8=r44hc72bb7e_0
@@ -183,16 +192,21 @@ dependencies:
   - r-rappdirs=0.3.3=r44h07cda29_3
   - r-rcolorbrewer=1.1_3=r44h785f33e_3
   - r-rcpp=1.0.14=r44h31118f2_0
+  - r-rcpptoml=0.2.3=r44h31118f2_0
   - r-rematch2=2.1.2=r44hc72bb7e_4
   - r-remotes=2.5.0=r44hc72bb7e_1
   - r-repr=1.1.7=r44h785f33e_1
+  - r-reticulate=1.42.0=r44h31118f2_0
   - r-rex=1.2.1=r44hc72bb7e_3
   - r-rlang=1.1.6=r44h31118f2_0
+  - r-rmarkdown=2.29=r44hc72bb7e_0
   - r-roxygen2=7.3.2=r44hd76f289_1
   - r-rprojroot=2.0.4=r44hc72bb7e_1
   - r-sass=0.4.10=r44h31118f2_0
   - r-scales=1.4.0=r44hc72bb7e_0
   - r-shiny=1.10.0=r44h785f33e_0
+  - r-shinydashboard=0.7.3=r44hc72bb7e_0
+  - r-shinywidgets=0.9.0=r44hc72bb7e_0
   - r-sourcetools=0.1.7_1=r44hd76f289_2
   - r-stringi=1.8.7=r44h4f22b37_0
   - r-stringr=1.5.1=r44h785f33e_1
@@ -202,6 +216,7 @@ dependencies:
   - r-tidyr=1.3.1=r44hd76f289_1
   - r-tidyselect=1.2.1=r44hc72bb7e_1
   - r-tidytree=0.4.6=r44hc72bb7e_1
+  - r-tinytex=0.57=r44hc72bb7e_0
   - r-utf8=1.2.5=r44h570997c_0
   - r-vctrs=0.6.5=r44hd76f289_1
   - r-viridislite=0.4.2=r44hc72bb7e_2
@@ -223,3 +238,4 @@ dependencies:
   - tzdata=2025b=h78e105d_0
   - zlib=1.3.1=h8359307_2
   - zstd=1.5.7=h6491c7d_2
+prefix: /opt/homebrew/Caskroom/miniforge/base/envs/monsterPlex
