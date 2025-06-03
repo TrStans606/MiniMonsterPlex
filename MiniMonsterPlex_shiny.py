@@ -523,10 +523,10 @@ def mlTree(outPut_Folder):
 	shutil.move('NA.pdf',f'{outPut_Folder}/tree_out/{outPut_Folder}_tree.pdf')
 
 #series of lines for cleaing up left over temp data
-def cleanup(outPut,input_folder,complete):
+def cleanup(outPut,input_folder,complete,project_name):
 	files_to_move = glob.glob(os.path.join(input_folder,'*.gz'))
 	for file in files_to_move:
-		shutil.move(file,'completed_fastq/')
+		shutil.move(file,os.path.join(project_name,'completed_fastq/'))
 
 	with open('totalMergedCall.vcf', 'a') as f:
 		with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf','r') as read:
@@ -536,7 +536,7 @@ def cleanup(outPut,input_folder,complete):
 	with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf', 'rb') as f_in:
 		with gzip.open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz', 'wb') as f_out:
 			shutil.copyfileobj(f_in, f_out)
-	shutil.move(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz','processed_vcf/')
+	shutil.move(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz',os.path.join(project_name,'processed_vcf/'))
 
 	shutil.rmtree(f'{outPut}/bowtie_out/')
 	shutil.rmtree(f'{outPut}/coverage_out/')
@@ -586,9 +586,9 @@ def cleanup(outPut,input_folder,complete):
 
 def main(project, metadata_file, complete=False):
 
-	outPut_Folder = project
-	metadata_file_name = metadata_file
-	input_folder = "fastq"
+	outPut_Folder = os.path.join(project,"output")
+	metadata_file_name = os.path.join(project,"metadata",metadata_file)
+	input_folder = os.path.join(project,"newFastq")
 	included_isolates = None
 	included_isolates_file = None
 	included_hosts = None
@@ -630,6 +630,8 @@ def main(project, metadata_file, complete=False):
 		pass
 	else:
 		os.mkdir(outPut_Folder)
+		os.mkdir(os.path.join(project,'completed_fastq'))
+		os.mkdir(os.path.join(project,'processed_vcf/'))
 		os.mkdir(os.path.join(outPut_Folder,'bowtie_out'))
 		os.mkdir(os.path.join(outPut_Folder,'mpileup_out'))
 		os.mkdir(os.path.join(outPut_Folder, "processedAlignSumm"))
@@ -725,4 +727,4 @@ def main(project, metadata_file, complete=False):
 
 	mlTree(outPut_Folder)
 
-	cleanup(outPut_Folder,input_folder,complete)
+	cleanup(outPut_Folder,input_folder,complete,project)
