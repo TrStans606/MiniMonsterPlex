@@ -585,7 +585,6 @@ def cleanup(outPut,input_folder,complete,project_name):
 			os.remove(file)
 
 def main(project, metadata_file, complete=False):
-
 	outPut_Folder = os.path.join(project,"output")
 	metadata_file_name = os.path.join(project,"metadata",metadata_file)
 	input_folder = os.path.join(project,"newFastq")
@@ -620,7 +619,7 @@ def main(project, metadata_file, complete=False):
 	# Print a tabular summary of key variables (project, metadata_file, outPut_Folder, inPut_Folder, complete)
 	print(f"{'Variable':<20} {'Value'}")
 	print(f"{'-'*20} {'-'*40}")
-	print(f"{'Project':<20} {outPut_Folder}")
+	print(f"{'Project':<20} {project}")
 	print(f"{'Metadata File':<20} {metadata_file_name}")
 	print(f"{'Output Folder':<20} {outPut_Folder}")
 	print(f"{'Input Folder':<20} {input_folder}")
