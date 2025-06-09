@@ -344,7 +344,8 @@ def sampleBuilder(outPut,metadata_file,project_name):
 		
 		with open(f'{outPut}/built_fasta/{project_name}builtSeqMeta.fasta', 'a') as writeSeq:
 			for read in seqs:
-				seqID = read[0].split('/')[2].split('.')[0].split('hits')[0]
+				file_path = Path(read[0])
+				seqID = file_path.name.split('.')[0]
 				if len(seqID.split("_")) > 1:
 					seqID = f'{"-".join(seqID.split("_"))}'
 				if (seqID) in sample_metadata:
@@ -414,6 +415,8 @@ def fasta_filter_hosts(outPut,included_hosts,filtered,project_name):
 
 def autoRAxML(outPut,filtered,project_name):
 	wd = os.getcwd()
+	print(os.path.join(wd,outPut))
+	print(f'{outPut}/built_fasta/{project_name}builtSeqMeta.fasta')
 	if filtered==False:
 	#command for running RAXML
 		try:
@@ -427,7 +430,7 @@ def autoRAxML(outPut,filtered,project_name):
 				'-x',
 				'1234',
 				'-s',
-				f'built_fasta/{project_name}builtSeqMeta.fasta',
+				f'{outPut}/built_fasta/{project_name}builtSeqMeta.fasta',
 				'-n',
 				'miniMonsterPlex.raxml',
 				'-m',
@@ -461,7 +464,7 @@ def autoRAxML(outPut,filtered,project_name):
 				'-x',
 				'1234',
 				'-s',
-				f'built_fasta/{project_name}builtSeqFiltered.fasta',
+				f'{outPut}/built_fasta/{project_name}builtSeqFiltered.fasta',
 				'-n',
 				'miniMonsterPlex.raxml',
 				'-m',
@@ -507,7 +510,7 @@ def raxmlGate(outPut_Folder,filtered):
 	else:
 		return(False)
 
-def mlTree(outPut_Folder):
+def mlTree(outPut_Folder,project_name):
 	try:
 		command = ['Rscript',
 			'--vanilla',
@@ -524,7 +527,7 @@ def mlTree(outPut_Folder):
 		print(f"Something Went wrong with mlTree:{e.stderr}")
 		quit()		
 	os.mkdir(os.path.join(outPut_Folder,'tree_out'))
-	shutil.move('NA.pdf',f'{outPut_Folder}/tree_out/{outPut_Folder}_tree.pdf')
+	shutil.move('NA.pdf',f'{outPut_Folder}/tree_out/{project_name}_tree.pdf')
 
 #series of lines for cleaing up left over temp data
 def cleanup(outPut,input_folder,complete,project_name):
@@ -533,14 +536,14 @@ def cleanup(outPut,input_folder,complete,project_name):
 		shutil.move(file,os.path.join('Projects',project_name,'completed_fastq/'))
 
 	with open('totalMergedCall.vcf', 'a') as f:
-		with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf','r') as read:
+		with open(f'{outPut}/merge_out/{project_name}MergedCallAll.vcf','r') as read:
 			for line in read:
 				f.write(line)
 
-	with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf', 'rb') as f_in:
-		with gzip.open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz', 'wb') as f_out:
+	with open(f'{outPut}/merge_out/{project_name}MergedCallAll.vcf', 'rb') as f_in:
+		with gzip.open(f'{outPut}/merge_out/{project_name}MergedCallAll.vcf.gz', 'wb') as f_out:
 			shutil.copyfileobj(f_in, f_out)
-	shutil.move(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf.gz',os.path.join('Projects',project_name,'processed_vcf/'))
+	shutil.move(f'{outPut}/merge_out/{project_name}MergedCallAll.vcf.gz',os.path.join('Projects',project_name,'processed_vcf/'))
 
 	shutil.rmtree(f'{outPut}/bowtie_out/')
 	shutil.rmtree(f'{outPut}/coverage_out/')
@@ -726,6 +729,6 @@ def main(project, metadata_file, complete=False):
 	else:
 		autoRAxML(outPut_Folder,filtered,project)
 
-	mlTree(outPut_Folder)
+	mlTree(outPut_Folder,project)
 
 	cleanup(outPut_Folder,input_folder,complete,project)
