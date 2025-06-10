@@ -177,6 +177,12 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$myButton, {
+    withProgress( 
+    message = 'MiniMonsterPlex is running',
+    value = 0,
+    min = 0,
+    max = 10,
+    {
     req(nzchar(input$project_id), input$metadata.file)
     
     project_id <- input$project_id
@@ -187,18 +193,20 @@ server <- function(input, output, session) {
     
     dir.create(fastq_dir,    recursive = TRUE, showWarnings = FALSE)
     dir.create(metadata_dir, recursive = TRUE, showWarnings = FALSE)
-    
+    setProgress(2, message = 'Creating output folders')
     default_meta <- file.path(base_dir, input$metadata.file)
+    setProgress(2, message = 'Copying Metadata')
     if (file.exists(default_meta)) {
       file.copy(default_meta, metadata_file, overwrite = TRUE)
       message("Copied default metadata to: ", metadata_file)
     }
-    
     print(paste("trying to start main", project_id, input$metadata.file))
+    setProgress(5, message = 'Running MiniMonserplex')
     reticulate::source_python("MiniMonsterPlex_shiny.py")
     main(project_id, input$metadata.file)
     message("Analysis complete for: ", project_id)
-    
+    setProgress(9, message = 'Running Cleaning up Alignment table')
+    })
     # Trigger table refresh
     alignment_trigger(alignment_trigger() + 1)
   })
