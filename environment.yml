@@ -75,7 +75,7 @@ dependencies:
   - libnghttp2=1.64.0=h6d7220d_0
   - libopenblas=0.3.29=openmp_hf332438_0
   - libpng=1.6.47=h3783ad8_0
-  - libsqlite=3.50.0=h3f77e49_0
+  - libsqlite=3.50.1=h3f77e49_0
   - libssh2=1.11.1=h1590b86_0
   - libtiff=4.7.0=ha962b0a_2
   - libuv=1.51.0=h5505292_0
@@ -96,7 +96,7 @@ dependencies:
   - perl=5.32.1=7_h4614cfb_perl5
   - pip=25.1.1=pyh145f28c_0
   - pixman=0.46.0=h2f9eb0b_0
-  - python=3.13.3=h81fe080_101_cp313
+  - python=3.13.5=h81fe080_101_cp313
   - python_abi=3.13=7_cp313
   - r-ape=5.8_1=r44h91c3ca0_0
   - r-aplot=0.2.5=r44hc72bb7e_0
