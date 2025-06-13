@@ -7,6 +7,7 @@ library(shinydashboard)
 library(promises)
 library(future)
 library(shinyWidgets)
+library(spsComps)
 
 plan(multisession)
 
@@ -116,9 +117,6 @@ server <- function(input, output, session) {
     dir.create(metadata_dir, recursive = TRUE, showWarnings = FALSE)
     
     message("Project directories created for: ", input$project_id)
-    message("  - newFastq: ", fastq_dir)
-    message("  - output: ", output_dir)
-    message("  - metadata: ", metadata_dir)
   })
   
   
@@ -135,8 +133,9 @@ server <- function(input, output, session) {
   output$file_upload_ui <- renderUI({
     req(nzchar(input$project_id))
     tagList(
-      fileInput("fastq_files",     "Upload FASTQ files:", multiple = TRUE),
-      fileInput("metadata_upload", "Upload metadata file")
+      fileInput("fastq_files",     "Upload FASTQ files:", multiple = TRUE,
+                accept = c(".gz", ".fastq", ".fq")),
+      fileInput("metadata_upload", "Upload metadata file", accept = ".csv")
     )
   })
   
@@ -169,75 +168,90 @@ server <- function(input, output, session) {
   })
   
   # Run analysis
-  alignment_trigger <- reactiveVal(0)
-  
-  # Reactive expression for tracking project ID
-  project_id_reactive <- reactive({
-    input$project_id
-  })
-  
   observeEvent(input$myButton, {
     withProgress( 
-    message = 'MiniMonsterPlex is running',
-    value = 0,
-    min = 0,
-    max = 10,
-    {
-    req(nzchar(input$project_id), input$metadata.file)
+      message = 'MiniMonsterPlex is running...',
+      value = 0,
+      min = 0,
+      max = 10,
+      {
+        req(nzchar(input$project_id), input$metadata.file)
+        
+        project_id <- input$project_id
+        
+        setProgress(1, message = 'Sourcing Python script...')
+        reticulate::source_python("MiniMonsterPlex_shiny.py")
+        
+        setProgress(3, message = 'Starting main analysis...')
+        
+        tryCatch({
+          # Call the main python function
+          main(project_id, input$metadata.file)
+          
+          setProgress(9, message = 'Analysis complete. Refreshing table...')
+          
+          # If successful, show a success message
+          showModal(modalDialog(
+            title = "Success!",
+            paste("Analysis for project", project_id, "completed successfully."),
+            easyClose = TRUE
+          ))
+          
+        },
+        error = function(e) {
+          # This block now catches the error raised from Python
+          error_message <- e$message
+          
+          # Clean up the message from reticulate if needed
+          error_message <- gsub(".*RuntimeError: ", "", error_message)
+          
+          # Show the detailed error in a modal dialog
+          showModal(modalDialog(
+            title = "A Python Error Has Occurred",
+            tags$h4("The analysis failed with the following error:"),
+            # Use a <pre> tag to preserve formatting of the error message
+            tags$pre(style = "white-space: pre-wrap; word-wrap: break-word; color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1; padding: 15px; border-radius: 4px;", 
+                     error_message),
+            easyClose = TRUE,
+            footer = NULL
+          ))
+        }
+        )
+      })
     
-    project_id <- input$project_id
-    project_dir   <- file.path(projects_dir, project_id)
-    fastq_dir     <- file.path(project_dir, "testFastq")
-    metadata_dir  <- file.path(project_dir, "metadata")
-    metadata_file <- file.path(metadata_dir, input$metadata.file)
-    
-    dir.create(fastq_dir,    recursive = TRUE, showWarnings = FALSE)
-    dir.create(metadata_dir, recursive = TRUE, showWarnings = FALSE)
-    setProgress(2, message = 'Creating output folders')
-    default_meta <- file.path(base_dir, input$metadata.file)
-    setProgress(2, message = 'Copying Metadata')
-    if (file.exists(default_meta)) {
-      file.copy(default_meta, metadata_file, overwrite = TRUE)
-      message("Copied default metadata to: ", metadata_file)
-    }
-    print(paste("trying to start main", project_id, input$metadata.file))
-    setProgress(5, message = 'Running MiniMonserplex')
-    reticulate::source_python("MiniMonsterPlex_shiny.py")
-    main(project_id, input$metadata.file)
-    message("Analysis complete for: ", project_id)
-    setProgress(9, message = 'Running Cleaning up Alignment table')
+    # Trigger table refresh regardless of success or failure
+    output$alignment_table <- renderDT({
+      req(nzchar(input$project_id))
+      
+      project_id <- input$project_id
+      summary_path <- file.path(projects_dir, project_id, "output/alignment_summary.csv")
+      
+      if (file.exists(summary_path)) {
+        df <- read.csv(summary_path)
+        colnames(df) <- c("Sample ID", "# Reads", "# Aligned", "Percent")
+        # Remove duplicates based on "sample ID", keeping the latest occurrence
+        df <- df[!duplicated(df[["Sample ID"]], fromLast = TRUE), ]
+        df <- df[order(df[["Sample ID"]]), ]
+        datatable(
+          df, extensions = 'Buttons', rownames = FALSE,
+          options = list(dom='Bfrtip', buttons=c('copy','csv','excel','pdf','print'))
+        )
+      } else {
+        datatable(
+          data.frame(Message = "No alignment summary found. Run the analysis or check for errors."),
+          rownames = FALSE
+        )
+      }
     })
-    # Trigger table refresh
-    alignment_trigger(alignment_trigger() + 1)
   })
   
-  # Render the alignment summary table reactively
+  # Initial render of the alignment summary table
   output$alignment_table <- renderDT({
-    req(nzchar(input$project_id))
-    
-    project_id <- input$project_id
-    summary_path <- file.path(projects_dir, project_id, "output/alignment_summary.csv")
-    
-    if (file.exists(summary_path)) {
-      df <- read.csv(summary_path)
-      colnames(df) <- c("sample ID", "# reads", "# aligned", "percent")
-      # Remove duplicates based on "sample ID", keeping the latest occurrence
-      df <- df[!duplicated(df[["sample ID"]], fromLast = TRUE), ]
-      df <- df[order(df[["sample ID"]]), ]
-      datatable(
-        df, extensions = 'Buttons', rownames = FALSE,
-        options = list(dom='Bfrtip', buttons=c('copy','csv','excel','pdf','print'))
-      )
-    } else {
-      datatable(
-        data.frame(Message = "No alignment summary found for this project."),
-        rownames = FALSE
-      )
-    }
+    datatable(
+      data.frame(Message = "Select a project and run the analysis to see results here."),
+      rownames = FALSE
+    )
   })
-  
-  
-  
 }
 
 shinyApp(ui, server)

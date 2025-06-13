@@ -17,39 +17,38 @@ from pathlib import Path
 def auto_bowtie2(outPut_Folder, input_file, fileNum,threads):
 	try:
 		print(fileNum, " is entering the pipeline")
-		#histat 2 + samtools sort call
-		command = ['bowtie2 --no-unal',
-			'-p',
-			str(threads),
-			'-x',
-			'index/70-15_small_index',
-			'-U',
-			input_file,
-			'--local --very-sensitive-local',
-			'2>', f'{outPut_Folder}/bowtie_out/{fileNum}_alignment_summary.txt'
+		# bowtie2 + samtools sort call
+		command = ['bowtie2', '--no-unal',
+			'-p', str(threads),
+			'-x', 'index/70-15_small_index',
+			'-U', input_file,
+			'--local', '--very-sensitive-local',
+			'2>', f'{outPut_Folder}/bowtie_out/{fileNum}_alignment_summary.txt',
 			'|',
-			'samtools', 
-			'sort',
+			'samtools', 'sort',
 			'-',
-			'-@',
-			'2',
-			'-O',
-			'bam',
-			'-o',
-			f'{outPut_Folder}/bowtie_out/{fileNum}hits.bam']
+			'-@', '2',
+			'-O', 'bam',
+			'-o', f'{outPut_Folder}/bowtie_out/{fileNum}hits.bam']
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
+		# Clean up failed files
 		if os.path.isfile(f'{outPut_Folder}/bowtie_out/{fileNum}hits.bam'):
 			os.remove(f'{outPut_Folder}/bowtie_out/{fileNum}hits.bam')
 		if os.path.isfile(f'{outPut_Folder}/bowtie_out/{fileNum}_alignment_summary.txt'):
 			os.remove(f'{outPut_Folder}/bowtie_out/{fileNum}_alignment_summary.txt')
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with bowtie2 :{e.stderr}")
-		quit()
+		
+		# Raise an exception with detailed error info instead of quitting
+		error_details = (f"Something went wrong with bowtie2 for file: {fileNum}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
+
 
 def parse_alignment_summary(fileNum, outPut_Folder):
 	with open(fileNum, 'r') as f:
@@ -78,7 +77,7 @@ def parse_alignment_summary(fileNum, outPut_Folder):
 	aligned_fraction = aligned_total / total_reads
 
 	# Return CSV string
-	return f"{fileNum},{total_reads},{aligned_total},{aligned_fraction:.4f}"
+	return f"{Path(fileNum).stem.replace('_alignment_summary','')},{total_reads},{aligned_total},{aligned_fraction:.4f}"
 
 
 def auto_mpileup(outPut, fileNum, threads):
@@ -101,14 +100,17 @@ def auto_mpileup(outPut, fileNum, threads):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(f'{outPut}/mpileup_out/{fileNum}.vcf'):
 			os.remove(f'{outPut}/mpileup_out/{fileNum}.vcf')
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with mpileup :{e.stderr}")
-		quit()
+		error_details = (f"Something went wrong with mpileup for file: {fileNum}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
+
 	
 def auto_call(outPut, fileNum):
 	try:
@@ -123,14 +125,16 @@ def auto_call(outPut, fileNum):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(f'{outPut}/call_out/{fileNum}call.vcf'):
 			os.remove(f'{outPut}/call_out/{fileNum}call.vcf')
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with bctools call:{e.stderr}")
-		quit()
+		error_details = (f"Something went wrong with bcftools call for file: {fileNum}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
 
 	
 def auto_bedtools(outPut, fileNum):
@@ -145,14 +149,16 @@ def auto_bedtools(outPut, fileNum):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(f'{outPut}/coverage_out/{fileNum}cover.bed'):
 			os.remove(f'{outPut}/coverage_out/{fileNum}cover.bed')
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with bedtools genomecov:{e.stderr}")
-		quit()
+		error_details = (f"Something went wrong with bedtools genomecov for file: {fileNum}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
 
 def auto_bgzip(outPut, fileNum,file_ex):
 	try:
@@ -161,14 +167,16 @@ def auto_bgzip(outPut, fileNum,file_ex):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(os.path.join(outPut,'mpileup_out',f'{fileNum}{file_ex}.gz')):
 			os.remove(os.path.join(outPut,'mpileup_out',f'{fileNum}{file_ex}.gz'))
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with bgzip:{e.stderr}")
-		quit()
+		error_details = (f"Something went wrong with bgzip for file: {fileNum}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
 
 	try:
 		command = ['tabix',
@@ -176,14 +184,16 @@ def auto_bgzip(outPut, fileNum,file_ex):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(os.path.join(outPut,'mpileup_out',f'{fileNum}{file_ex}.gz.tbi')):
 			os.remove(os.path.join(outPut,'mpileup_out',f'{fileNum}{file_ex}.gz.tbi'))
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with tabix:{e.stderr}")
-		quit()		
+		error_details = (f"Something went wrong with tabix for file: {fileNum}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
 
 def autoVCFZip(outPut, file, fileNum):
 	#bg zip the bcftools call result file
@@ -193,14 +203,16 @@ def autoVCFZip(outPut, file, fileNum):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(os.path.join(outPut,'call_out',f'{fileNum}call.vcf.gz')):
 			os.remove(os.path.join(outPut,'call_out',f'{fileNum}call.vcf.gz'))
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with bgzip:{e.stderr}")
-		quit()
+		error_details = (f"Something went wrong with bgzip for file: {fileNum}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
 
 	#tabix the call results
 	try:
@@ -209,14 +221,16 @@ def autoVCFZip(outPut, file, fileNum):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(os.path.join(outPut,'call_out',f'{fileNum}call.vcf.gz.tbi')):
 			os.remove(os.path.join(outPut,'call_out',f'{fileNum}call.vcf.gz.tbi'))
-		print(f'Issue with file: {fileNum}')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with tabix:{e.stderr}")
-		quit()		
+		error_details = (f"Something went wrong with tabix for file: {fileNum}.\n"
+						 f"Command: {' '.join(command)}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
 	with open(f'{outPut}/fastqListCall.txt', 'a') as append:
 		file_name = Path(file)
 		file_name = file_name.name.split('.')[0]
@@ -234,14 +248,16 @@ def autoMerge(outPut,project_name):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile(os.path.join(outPut,'merge_out',f'{project_name}MergedCallAll.vcf')):
 			os.remove(os.path.join(outPut,'merge_out',f'{project_name}MergedCallAll.vcf'))
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with bcftools merge:{e.stderr}")
-		quit()		
-
+		error_details = (f"Something went wrong with bcftools merge.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
 		
 def sampleBuilder(outPut,metadata_file,project_name):
 	sites =[]
@@ -286,9 +302,7 @@ def sampleBuilder(outPut,metadata_file,project_name):
 								seqs[n - 9][1] += "N"
 								sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
 						else:
-							print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
-							print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							quit()
+							raise RuntimeError(f"Something went wrong with {seqs[n][0]}\n{lineList[n]} at site {line.strip().split()[0]} {line.strip().split()[1]}")
 					#this checks cases were both ref and alt are registered
 					elif len(fields[2].split(',')) >= 2:
 						#this creates a list out of the AD field
@@ -329,18 +343,15 @@ def sampleBuilder(outPut,metadata_file,project_name):
 							seqs[n - 9][1] += lineList[3]
 							sitesUsed.append(line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
 						else:
-							print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
-							print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-							quit()
+							raise RuntimeError(f"Something went wrong with {seqs[n][0]}\n{lineList[n]} at site {line.strip().split()[0]} {line.strip().split()[1]}")
 					else:
-						print("something went wrong with " + seqs[n][0] + '\n' + lineList[n])
-						print("at site " + line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1])
-						quit()
+						raise RuntimeError(f"Something went wrong with {seqs[n][0]}\n{lineList[n]} at site {line.strip().split()[0]} {line.strip().split()[1]}")
+
 		sample_metadata = metaDataBuilder(metadata_file)
 		
 		print(sample_metadata)
 		
-		os.mkdir(f'{outPut}/built_fasta')
+		os.makedirs(f'{outPut}/built_fasta', exist_ok=True)
 		
 		with open(f'{outPut}/built_fasta/{project_name}builtSeqMeta.fasta', 'a') as writeSeq:
 			for read in seqs:
@@ -394,11 +405,11 @@ def fasta_filter_hosts(outPut,included_hosts,filtered,project_name):
 				if lines[i][0] == '>':
 					if len(lines[i].split('_')) > 2 and lines[i].split('_')[3].strip() in included_hosts:
 						to_write.append([lines[i],lines[i+1]])
-		with open(f'{outPut}/built_fasta/{outPut}builtSeqFiltered2.fasta','a') as write:
+		with open(f'{outPut}/built_fasta/{project_name}builtSeqFiltered2.fasta','a') as write:
 			for isolate in to_write:
 				write.write(f'{isolate[0]}{isolate[1]}')
 		os.remove(f'{outPut}/built_fasta/{project_name}builtSeqFiltered.fasta')
-		os.rename(f'{outPut}/built_fasta/{project_name}builtSeqFiltered2.fasta', f'{outPut}/built_fasta/{outPut}builtSeqFiltered.fasta')
+		os.rename(f'{outPut}/built_fasta/{project_name}builtSeqFiltered2.fasta', f'{outPut}/built_fasta/{project_name}builtSeqFiltered.fasta')
 	#otherwise it acts the same as fasta_filter but with hosts
 	else:
 		to_write = []
@@ -417,98 +428,51 @@ def autoRAxML(outPut,filtered,project_name):
 	wd = os.getcwd()
 	print(os.path.join(wd,outPut))
 	print(f'{outPut}/built_fasta/{project_name}builtSeqMeta.fasta')
-	if filtered==False:
 	#command for running RAXML
-		try:
-			command = ['raxmlHPC',
-				'-w',
-				os.path.join(wd,outPut),
-				'-p',
-				'1234',
-				'-f',
-				'a',
-				'-x',
-				'1234',
-				'-s',
-				f'{outPut}/built_fasta/{project_name}builtSeqMeta.fasta',
-				'-n',
-				'miniMonsterPlex.raxml',
-				'-m',
-				'GTRGAMMA',
-				'-#',
-				'1000']
-			subprocess.run(' '.join(command),
-					shell=True,
-					check=True,
-					capture_output=True)
-		except subprocess.CalledProcessError as e:
-			raxmls = glob.glob(os.path.join(outPut,'*.raxml'))
-			for file in raxmls:
-				os.remove(file)
-			print(f'Errror running command: {e}')
-			print(f"Something Went wrong with raxml:{e.stderr}")
-			quit()		
-		os.mkdir(os.path.join(outPut,'raxml_out'))
+	command = ['raxmlHPC',
+		'-w',
+		os.path.join(wd,outPut),
+		'-p', '1234',
+		'-f', 'a',
+		'-x', '1234',
+		'-s', f'{outPut}/built_fasta/{project_name}builtSeqFiltered.fasta' if filtered else f'{outPut}/built_fasta/{project_name}builtSeqMeta.fasta',
+		'-n', 'miniMonsterPlex.raxml',
+		'-m', 'GTRGAMMA',
+		'-#', '1000']
+	try:
+		subprocess.run(' '.join(command),
+				shell=True,
+				check=True,
+				capture_output=True,
+				text=True)
+	except subprocess.CalledProcessError as e:
 		raxmls = glob.glob(os.path.join(outPut,'*.raxml'))
 		for file in raxmls:
-			shutil.move(file,os.path.join(outPut,'raxml_out'))
-	else:
-		try:
-			command = ['raxmlHPC',
-				'-w',
-				os.path.join(wd,outPut),
-				'-p',
-				'1234',
-				'-f',
-				'a',
-				'-x',
-				'1234',
-				'-s',
-				f'{outPut}/built_fasta/{project_name}builtSeqFiltered.fasta',
-				'-n',
-				'miniMonsterPlex.raxml',
-				'-m',
-				'GTRGAMMA',
-				'-#',
-				'1000']
-			subprocess.run(' '.join(command),
-					shell=True,
-					check=True,
-					capture_output=True)
-		except subprocess.CalledProcessError as e:
-			raxmls = glob.glob(os.path.join(outPut,'*.raxml'))
-			for file in raxmls:
-				os.remove(file)
-			print(f'Errror running command: {e}')
-			print(f"Something Went wrong with raxml:{e.stderr}")
-			quit()		
-		os.mkdir(os.path.join(outPut,'raxml_out'))
-		raxmls = glob.glob(os.path.join(outPut,'*.raxml'))
-		for file in raxmls:
-			shutil.move(file,os.path.join(outPut,'raxml_out'))
+			os.remove(file)
+		error_details = (f"Something went wrong with RAxML.\n"
+						 f"Command: {' '.join(command)}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
+	
+	os.makedirs(os.path.join(outPut,'raxml_out'), exist_ok=True)
+	raxmls = glob.glob(os.path.join(outPut,'*miniMonsterPlex.raxml*'))
+	for file in raxmls:
+		shutil.move(file,os.path.join(outPut,'raxml_out', Path(file).name))
 		
-
-def raxmlGate(outPut_Folder,filtered):
+def raxmlGate(outPut_Folder,filtered, project_name):
 	if filtered:
-		with open(f'{outPut_Folder}/built_fasta/{outPut_Folder}builtSeqFiltered.fasta', 'r') as read:
-			cnt = 0
-			for line in read:
-				if line[0] == ">":
-					cnt += 1
+		fasta_path = f'{outPut_Folder}/built_fasta/{project_name}builtSeqFiltered.fasta'
+		with open(fasta_path, 'r') as read:
+			cnt = sum(1 for line in read if line.startswith(">"))
 		if cnt < 4:
-			user_input = ''
-			while user_input != 'y':
-				print("Tree building requires a minium of 4 isolates and you have less then 4 in your filtering")
-				user_input= input("Would you like to build a tree with all isolates(y) or quit now(n)? (y/n)")
-				if user_input == 'n':
-					quit()
-			filtered = False
-			return(filtered)
+			print("Tree building requires a minimum of 4 isolates, but you have fewer than 4 after filtering.")
+			print("RAxML will not be run on the filtered set.")
+			return None # Special value to indicate skipping RAxML
 		else:
-			filtered = True
-			return(filtered)
+			return True # Proceed with filtered
 	else:
-		return(False)
+		return False # Proceed with unfiltered
 
 def mlTree(outPut_Folder,project_name):
 	try:
@@ -519,14 +483,17 @@ def mlTree(outPut_Folder,project_name):
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
 		if os.path.isfile('NA.pdf'):
 			os.remove('NA.pdf')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with mlTree:{e.stderr}")
-		quit()		
-	os.mkdir(os.path.join(outPut_Folder,'tree_out'))
+		error_details = (f"Something went wrong with the MLtree.R script.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
+	os.makedirs(os.path.join(outPut_Folder,'tree_out'), exist_ok=True)
 	shutil.move('NA.pdf',f'{outPut_Folder}/tree_out/{project_name}_tree.pdf')
 
 #series of lines for cleaing up left over temp data
@@ -601,29 +568,27 @@ def main(project, metadata_file, complete=False):
 	included_hosts_file = None
 	threads = multiprocessing.cpu_count()
 	if threads > 8:
-		threads =8
-	#this makes it so you can use the -i and -il commands at the same time
-	if included_isolates == None:
+		threads = 8
+
+	if included_isolates is None:
 		included_isolates = []
-	if included_isolates_file != None:
+	if included_isolates_file is not None:
 		with open(included_isolates_file, 'r') as read:
 			for line in read:
 				if line.strip() not in included_isolates:
 					included_isolates.append(line.strip())
-	#this makes it so you can use the -hf and -hfl commands at the same time
-	if included_hosts == None:
+	
+	if included_hosts is None:
 		included_hosts = []
-	if included_hosts_file != None:
+	if included_hosts_file is not None:
 		with open(included_hosts_file, 'r') as read:
 			for line in read:
 				if line.strip() not in included_hosts:
 					included_hosts.append(line.strip())
 
-	threads = multiprocessing.cpu_count()
 	filtered = False
 	fileList = glob.glob(f'{input_folder}/*.gz')
 
-	# Print a tabular summary of key variables (project, metadata_file, outPut_Folder, inPut_Folder, complete)
 	print(f"{'Variable':<20} {'Value'}")
 	print(f"{'-'*20} {'-'*40}")
 	print(f"{'Project':<20} {project}")
@@ -642,78 +607,55 @@ def main(project, metadata_file, complete=False):
 	os.makedirs(os.path.join(outPut_Folder,'coverage_out'),exist_ok=True)
 	os.makedirs(os.path.join(outPut_Folder, 'merge_out'),exist_ok=True)
 
+	alignment_summary_file = f'{outPut_Folder}/alignment_summary.csv'
+	if os.path.exists(alignment_summary_file):
+		os.remove(alignment_summary_file)
+
+
 	#everything now runs on a file by file basis skipping steps if an output file already exists
 	for file in fileList:
 		file_path = Path(file)
 		fileNum = file_path.name.split('.')[0]
-		if os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam')):
-			print(f'File {fileNum} has already been processed by bowtie')
-		else:
+		if not os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam')):
 			auto_bowtie2(outPut_Folder, file,fileNum, threads)
 
 		summary_string = parse_alignment_summary(f'{outPut_Folder}/bowtie_out/{fileNum}_alignment_summary.txt', outPut_Folder)
-		# Write the result to a CSV file
-		with open(f'{outPut_Folder}/processedAlignSumm/alignment_summary.csv', "a") as out_file:  # "a" = append mode
+		with open(alignment_summary_file, "a") as out_file:
 			out_file.write(summary_string + "\n")
 
-		#capture more error info about subprocess commands
-		if os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.csi')):
-			print(f"{fileNum} has already been tabixed")
-		else:
+		if not os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.csi')):
 			try:
-				command = ['tabix',
-				os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam')]
-				subprocess.run(' '.join(command),
-						shell=True,
-						check=True,
-						capture_output=True)
+				command = ['samtools', 'index', os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam')]
+				subprocess.run(command, check=True, capture_output=True, text=True)
 			except subprocess.CalledProcessError as e:
-				if os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.csi')):
-					os.remove(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam.csi'))
-				print(f'Issue with file: {fileNum}')
-				print(f'Errror running command: {e}')
-				print(f"Something Went wrong with tabix :{e.stderr}")
-				quit()
+				error_details = (f"Something went wrong with samtools index for file: {fileNum}.\n"
+								 f"Command: {e}\n"
+								 f"Return Code: {e.returncode}\n"
+								 f"Stderr: {e.stderr}")
+				raise RuntimeError(error_details)
 
-		if os.path.isfile(os.path.join(outPut_Folder,'mpileup_out',f'{fileNum}.vcf')):
-			print(f'File {fileNum} has already been processed by mpileup')
-		else:
+		if not os.path.isfile(os.path.join(outPut_Folder,'mpileup_out',f'{fileNum}.vcf')):
 			auto_mpileup(outPut_Folder, fileNum, threads)
 		
-		if os.path.isfile(os.path.join(outPut_Folder,'call_out',f'{fileNum}call.vcf')):
-			print(f'File {fileNum} has already been processed by bcftools call')
-		else:
+		if not os.path.isfile(os.path.join(outPut_Folder,'call_out',f'{fileNum}call.vcf')):
 			auto_call(outPut_Folder, fileNum)
 
-		if os.path.isfile(f'{outPut_Folder}/coverage_out/{fileNum}cover.bed'):
-			print(f'File {fileNum} has already been processed by bedtools genomcov')
-		else:
+		if not os.path.isfile(f'{outPut_Folder}/coverage_out/{fileNum}cover.bed'):
 			auto_bedtools(outPut_Folder, fileNum)
 
 		file_extension = ".vcf"
-
-		if os.path.isfile(os.path.join(outPut_Folder,'mpileup_out',f'{fileNum}{file_extension}.gz.tbi')):
-			print(f'File {fileNum} has already been processed by bgzip')
-		else:
+		if not os.path.isfile(os.path.join(outPut_Folder,'mpileup_out',f'{fileNum}{file_extension}.gz.tbi')):
 			auto_bgzip(outPut_Folder, fileNum, file_extension)
 
-		if os.path.isfile(os.path.join(outPut_Folder,'call_out',f'{fileNum}call.vcf.gz.tbi')):
-			print(f'File {fileNum} has already been processed by bgzip and tabix')
-		else:	
+		if not os.path.isfile(os.path.join(outPut_Folder,'call_out',f'{fileNum}call.vcf.gz.tbi')):	
 			autoVCFZip(outPut_Folder, file, fileNum)
 
-	if os.path.isfile(os.path.join(outPut_Folder,'merge_out',f'{outPut_Folder}MergedCallAll.vcf')):
-		print('Merge already done: Skipping')
-		pass
-	else:
+	if not os.path.isfile(os.path.join(outPut_Folder,'merge_out',f'{project}MergedCallAll.vcf')):
 		autoMerge(outPut_Folder,project)
 
-	if os.path.isdir(os.path.join(outPut_Folder,'built_fasta')):
-		print('Fasta already built: Skipping')
-		pass
-	else:
+	if not os.path.isdir(os.path.join(outPut_Folder,'built_fasta')):
 		sampleBuilder(outPut_Folder,metadata_file_name,project)
-	#this starts the filtering process if more then seq id is given
+	
 	if len(included_isolates) >= 1:
 		fasta_filter(outPut_Folder, included_isolates,project)
 		filtered = True
@@ -722,13 +664,14 @@ def main(project, metadata_file, complete=False):
 		fasta_filter_hosts(outPut_Folder, included_hosts,filtered,project)
 		filtered = True
 		
-	filtered = raxmlGate(outPut_Folder,filtered)
+	raxml_decision = raxmlGate(outPut_Folder,filtered, project)
 
-	if os.path.isdir(os.path.join(outPut_Folder,'raxml_out')):
-		print("Raxml has already run")
-	else:
-		autoRAxML(outPut_Folder,filtered,project)
+	if raxml_decision is not None and not os.path.isdir(os.path.join(outPut_Folder,'raxml_out')):
+		autoRAxML(outPut_Folder, raxml_decision, project)
 
-	mlTree(outPut_Folder,project)
+	if os.path.exists(f'{outPut_Folder}/raxml_out/RAxML_bestTree.miniMonsterPlex.raxml'):
+		mlTree(outPut_Folder,project)
 
-	cleanup(outPut_Folder,input_folder,complete,project)
+	if 'completed_fastq' not in os.listdir(os.path.join('Projects', project)):
+		cleanup(outPut_Folder,input_folder,complete,project)
+
