@@ -103,6 +103,9 @@ server <- function(input, output, session) {
   projects_dir <- file.path(base_dir, "Projects")
   dir.create(projects_dir, showWarnings = FALSE)
   
+  # Reactive value to store the final vector of selected files
+  final_file_vector <- reactiveVal(character(0))
+  
   # Create necessary directories as soon as project ID is selected
   observeEvent(input$project_id, {
     req(nzchar(input$project_id))  # Ensure project_id is not empty
@@ -177,7 +180,7 @@ server <- function(input, output, session) {
       {
         req(nzchar(input$project_id), input$metadata.file)
         
-        project_id <- input$project_id
+        project_id <<- input$project_id
         
         setProgress(1, message = 'Sourcing Python script...')
         reticulate::source_python("MiniMonsterPlex_shiny.py")
@@ -186,16 +189,27 @@ server <- function(input, output, session) {
         
         tryCatch({
           # Call the main python function
-          main(project_id, input$metadata.file)
+          file_name_list <- main(project_id, input$metadata.file)
           
-          setProgress(9, message = 'Analysis complete. Refreshing table...')
+          setProgress(4, message = 'Analysis complete. Displaying filter selection.')
           
-          # If successful, show a success message
+          # Show the modal dialog with checkboxes for file selection
           showModal(modalDialog(
-            title = "Success!",
-            paste("Analysis for project", project_id, "completed successfully."),
+            title = "Select Files",
+            p("Select the files you want to include in the final anaylsis"),
+            # Checkbox group with the list of files from the python script
+            checkboxGroupInput("selected_files_checkbox", "Returned Files:",
+                               choices = file_name_list,
+                               selected = file_name_list), # All selected by default
+            footer = tagList(
+              # This button confirms the selection and triggers the next observer
+              actionButton("confirm_selection", "Create Vector", class = "btn-primary"),
+              modalButton("Cancel")
+            ),
             easyClose = TRUE
           ))
+          
+          setProgress(6, message = 'Awaiting file selection...')
           
         },
         error = function(e) {
@@ -243,6 +257,53 @@ server <- function(input, output, session) {
         )
       }
     })
+  })
+  
+  # Observer for the modal dialog confirmation button
+  observeEvent(input$confirm_selection, {
+    # Store the selected files from the checkbox input into the reactive value
+    final_file_vector(input$selected_files_checkbox)
+    
+    # Close the pop-up window
+    removeModal()
+    
+    filtered <- final_file_vector()
+    
+    reticulate::source_python("MiniMonsterPlex_shiny_raxml.py")
+    
+    setProgress(8, message = 'Building Tree')
+    tryCatch({
+      # Call the main python function
+      main(project_id, filtered)
+      
+      setProgress(10, message = 'Finished')
+      # Show a final success message to the user
+      showModal(modalDialog(
+        title = "Success!",
+        paste("Analysis for project", input$project_id, "completed."),
+        easyClose = TRUE
+      ))
+      
+    },
+    error = function(e) {
+      # This block now catches the error raised from Python
+      error_message <- e$message
+      
+      # Clean up the message from reticulate if needed
+      error_message <- gsub(".*RuntimeError: ", "", error_message)
+      
+      # Show the detailed error in a modal dialog
+      showModal(modalDialog(
+        title = "A Python Error Has Occurred",
+        tags$h4("The analysis failed with the following error:"),
+        # Use a <pre> tag to preserve formatting of the error message
+        tags$pre(style = "white-space: pre-wrap; word-wrap: break-word; color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1; padding: 15px; border-radius: 4px;", 
+                 error_message),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
+    )
   })
   
   # Initial render of the alignment summary table
