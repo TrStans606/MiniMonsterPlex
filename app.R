@@ -40,8 +40,10 @@ ui <- dashboardPage(
   dashboardSidebar(
     width = 350,
     sidebarMenu(
+      id = "tabs",
       menuItem("Inputs",            tabName = "inputs",  icon = icon("upload")),
-      menuItem("Alignment Summary", tabName = "summary", icon = icon("table"))
+      menuItem("Alignment Summary", tabName = "summary", icon = icon("table")),
+      menuItem("Phylogenetic Tree", tabName = "tree",    icon = icon("tree", lib = "font-awesome"))
     )
   ),
   dashboardBody(
@@ -89,6 +91,16 @@ ui <- dashboardPage(
                   DTOutput("alignment_table")
                 )
               )
+      ),
+      
+      # ---- Phylogenetic Tree tab ----
+      tabItem(tabName = "tree",
+              fluidRow(
+                box(
+                  width = 12, title = "Phylogenetic Tree", status = "info", solidHeader = TRUE,
+                  uiOutput("phylogenetic_tree_display")
+                )
+              )
       )
     )
   )
@@ -102,15 +114,20 @@ server <- function(input, output, session) {
   base_dir     <- getwd()
   projects_dir <- file.path(base_dir, "Projects")
   dir.create(projects_dir, showWarnings = FALSE)
+  # Create www directory for serving files like the PDF tree
+  dir.create("www", showWarnings = FALSE)
   
   # Reactive value to store the final vector of selected files
   final_file_vector <- reactiveVal(character(0))
+  # Reactive value to store the URL of the current tree PDF
+  current_tree_url <- reactiveVal(NULL)
   
   # Create necessary directories as soon as project ID is selected
   observeEvent(input$project_id, {
     req(nzchar(input$project_id))  # Ensure project_id is not empty
     
-    project_dir     <- file.path(projects_dir, input$project_id)
+    project_id      <- input$project_id
+    project_dir     <- file.path(projects_dir, project_id)
     fastq_dir       <- file.path(project_dir, "newFastq")
     output_dir      <- file.path(project_dir, "output")
     metadata_dir    <- file.path(project_dir, "metadata")
@@ -119,7 +136,19 @@ server <- function(input, output, session) {
     dir.create(output_dir,   recursive = TRUE, showWarnings = FALSE)
     dir.create(metadata_dir, recursive = TRUE, showWarnings = FALSE)
     
-    message("Project directories created for: ", input$project_id)
+    message("Project directories created for: ", project_id)
+    
+    # Check for an existing tree PDF and update the display if it's found
+    tree_filename <- paste0(project_id, "_tree.pdf")
+    source_pdf_path <- file.path(output_dir, "tree_out", tree_filename)
+    
+    if (file.exists(source_pdf_path)) {
+      dest_pdf_path <- file.path("www", tree_filename)
+      file.copy(source_pdf_path, dest_pdf_path, overwrite = TRUE)
+      current_tree_url(tree_filename)
+    } else {
+      current_tree_url(NULL)
+    }
   })
   
   
@@ -276,6 +305,19 @@ server <- function(input, output, session) {
       # Call the main python function
       main(project_id, filtered)
       
+      # After the python script runs, find the PDF and prepare it for display
+      tree_filename <- paste0(project_id, "_tree.pdf")
+      source_pdf_path <- file.path(projects_dir, project_id, "output", "tree_out", tree_filename)
+      
+      if (file.exists(source_pdf_path)) {
+        dest_pdf_path <- file.path("www", tree_filename)
+        file.copy(source_pdf_path, dest_pdf_path, overwrite = TRUE)
+        current_tree_url(tree_filename) # Update the reactive value with the file name
+        updateTabItems(session, "tabs", "tree") # Switch to the tree tab
+      } else {
+        current_tree_url(NULL) # Set to NULL if tree not found
+      }
+      
       setProgress(10, message = 'Finished')
       # Show a final success message to the user
       showModal(modalDialog(
@@ -312,6 +354,17 @@ server <- function(input, output, session) {
       data.frame(Message = "Select a project and run the analysis to see results here."),
       rownames = FALSE
     )
+  })
+  
+  # Render for the phylogenetic tree UI. This will show the PDF or a message.
+  output$phylogenetic_tree_display <- renderUI({
+    url <- current_tree_url()
+    if (!is.null(url)) {
+      # Use an iframe to embed the PDF from the 'www' directory
+      tags$iframe(style = "height: 800px; width: 100%; border: none;", src = url)
+    } else {
+      p("Phylogenetic tree not available. Please run the full analysis or select a project with a completed analysis.")
+    }
   })
 }
 
