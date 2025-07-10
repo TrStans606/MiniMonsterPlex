@@ -13,8 +13,40 @@ import argparse
 import multiprocessing
 import shutil
 import gzip
+from pathlib import Path
+import sys
 
-def auto_bowtie2(outPut_Folder, input_file, fileNum,threads):
+
+def auto_build_ref(outPut_Folder,ref):
+	ref_file_path = Path(ref)
+	ref_name = ref_file_path.name.split('.')[0]
+	try:
+		command = [
+			'bowtie2-build',
+			os.path.join('index',ref),
+			os.path.join('index',f'{ref_name}_index')
+		]
+
+		subprocess.run(' '.join(command),
+					shell=True,
+					check=True,
+					capture_output=True,
+					text=True)
+		
+		return os.path.join('index',f'{ref_name}_index')
+	except subprocess.CalledProcessError as e:
+		# Clean up failed files
+		files_to_remove = glob.glob(os.path.join(outPut_Folder,'index','*.bt2'))
+		for file in files_to_remove:
+			os.remove(file)
+		# Raise an exception with detailed error info instead of quitting
+		error_details = (f"Something went wrong with building refernce for file: {ref_name}.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
+
+def auto_bowtie2(outPut_Folder, input_file, fileNum,threads,index):
 	try:
 		print(fileNum, " is entering the pipeline")
 		#histat 2 + samtools sort call
@@ -22,7 +54,7 @@ def auto_bowtie2(outPut_Folder, input_file, fileNum,threads):
 			'-p',
 			str(threads),
 			'-x',
-			'index/70-15_small_index',
+			index,
 			'-U',
 			input_file,
 			'--local --very-sensitive-local',
@@ -81,7 +113,7 @@ def parse_alignment_summary(fileNum, outPut_Folder):
 	return f"{fileNum},{total_reads},{aligned_total},{aligned_fraction:.4f}"
 
 
-def auto_mpileup(outPut, fileNum, threads):
+def auto_mpileup(outPut, fileNum, threads,ref):
 	try:
 		command = ['bcftools',
 				'mpileup',
@@ -94,7 +126,7 @@ def auto_mpileup(outPut, fileNum, threads):
 				'--annotate',
 				'FORMAT/AD',
 				'-f',
-				'index/70-15_small.fasta',
+				os.path.join('index',ref),
 				os.path.join(outPut,'bowtie_out',f'{fileNum}hits.bam'),
 				'>>',
 				f'{outPut}/mpileup_out/{fileNum}.vcf']
@@ -218,7 +250,9 @@ def autoVCFZip(outPut, file, fileNum):
 		print(f"Something Went wrong with tabix:{e.stderr}")
 		quit()		
 	with open(f'{outPut}/fastqListCall.txt', 'a') as append:
-		append.write(f'{outPut}/call_out/' + file.split('/')[1].split('.')[0] + 'call.vcf.gz\n')
+		file_name = Path(file)
+		file_name = file_name.name.split('.')[0]
+		append.write(f'{outPut}/call_out/{file_name}call.vcf.gz\n')
 
 def autoMerge(outPut):
 	try:
@@ -240,14 +274,20 @@ def autoMerge(outPut):
 		quit()		
 
 		
-def sampleBuilder(outPut,metadata_file):
-	sites =[]
-	sitesUsed =[]
+def sampleBuilder(outPut,metadata_file,sites_list):
+	print(sites_list)
 	#reads a list of sites you want and only looks at data from there
-	with open('MonsterPlexSitesList_small_index.txt', 'r') as read:
-		for line in read:
-			sites.append(line.strip('\n'))
-
+	if sites_list != None:
+		sites =[]
+		sitesUsed =[]
+		full = False
+		with open(sites_list, 'r') as read:
+			for line in read:
+				sites.append(line.strip('\n'))
+	else:
+		sites =[]
+		sitesUsed =[]
+		full = True
 	with open(f'{outPut}/merge_out/{outPut}MergedCallAll.vcf', 'r') as read:
 		seqs = list()
 		check = False
@@ -259,7 +299,7 @@ def sampleBuilder(outPut,metadata_file):
 					seqs.append([fqList[n], ''])
 					check = True
 			#elif check:
-			elif check and line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1] in sites:
+			elif (check and line.strip('\n').split('\t')[0] + ' ' + line.strip('\n').split('\t')[1] in sites) or (check and full):
 				#this creates a horizontal split of the line
 				lineList = line.strip('\n').split('\t')
 				for n in range(9,len(lineList)):
@@ -341,7 +381,8 @@ def sampleBuilder(outPut,metadata_file):
 		
 		with open(f'{outPut}/built_fasta/{outPut}builtSeqMeta.fasta', 'a') as writeSeq:
 			for read in seqs:
-				seqID = read[0].split('/')[2].split('.')[0].split('hits')[0]
+				file_path = Path(read[0])
+				seqID = file_path.name.split('.')[0].split('hits')[0]
 				if len(seqID.split("_")) > 1:
 					seqID = f'{"-".join(seqID.split("_"))}'
 				if (seqID) in sample_metadata:
@@ -683,6 +724,26 @@ def main():
 		required=False
 	)
 
+	#arg for inputting in a fasta file to index
+	parser.add_argument(
+		'-r',
+		action='store',
+		help=(
+			'For inputting in a fasta file to pre reference'
+		),
+		required=True,
+	)
+
+	#arg for inputting in sites file for anaylsis
+	parser.add_argument(
+		'-s',
+		action='store',
+		help=(
+			"for inputting a list of sites to scan for"
+		),
+		default=None
+	)	
+
 	args = parser.parse_args()
 
 	outPut_Folder = args.o
@@ -693,9 +754,12 @@ def main():
 	included_hosts = args.hf
 	included_hosts_file = args.hfl
 	complete = args.complete
+	reference = args.r
+	sites=args.s
 	threads = multiprocessing.cpu_count()
 	if threads > 8:
 		threads =8
+
 	#this makes it so you can use the -i and -il commands at the same time
 	if included_isolates == None:
 		included_isolates = []
@@ -736,14 +800,22 @@ def main():
 		os.mkdir(os.path.join(outPut_Folder,'call_out'))
 		os.mkdir(os.path.join(outPut_Folder,'coverage_out'))
 		os.mkdir(os.path.join(outPut_Folder, 'merge_out'))
+	
+	#builds reference for fasta
+	if os.path.isfile(os.path.join('index',f'{reference}_index')):
+		index=os.path.join('index',f'{reference}_index')
+	else:	
+		index = auto_build_ref(outPut_Folder,reference)
+	print("Reference index built")
 
 	#everything now runs on a file by file basis skipping steps if an output file already exists
 	for file in fileList:
-		fileNum = file.split('/')[1].split('.')[0]
+		file_path = Path(file)
+		fileNum = file_path.name.split('.')[0]
 		if os.path.isfile(os.path.join(outPut_Folder,'bowtie_out',f'{fileNum}hits.bam')):
 			print(f'File {fileNum} has already been processed by bowtie')
 		else:
-			auto_bowtie2(outPut_Folder, file,fileNum, threads)
+			auto_bowtie2(outPut_Folder, file,fileNum, threads,index)
 
 		summary_string = parse_alignment_summary(f'{outPut_Folder}/bowtie_out/{fileNum}_alignment_summary.txt', outPut_Folder)
 		# Write the result to a CSV file
@@ -772,7 +844,7 @@ def main():
 		if os.path.isfile(os.path.join(outPut_Folder,'mpileup_out',f'{fileNum}.vcf')):
 			print(f'File {fileNum} has already been processed by mpileup')
 		else:
-			auto_mpileup(outPut_Folder, fileNum, threads)
+			auto_mpileup(outPut_Folder, fileNum, threads,reference)
 		
 		if os.path.isfile(os.path.join(outPut_Folder,'call_out',f'{fileNum}call.vcf')):
 			print(f'File {fileNum} has already been processed by bcftools call')
@@ -806,7 +878,7 @@ def main():
 		print('Fasta already built: Skipping')
 		pass
 	else:
-		sampleBuilder(outPut_Folder,metadata_file_name)
+		sampleBuilder(outPut_Folder,metadata_file_name,sites)
 	#this starts the filtering process if more then seq id is given
 	if len(included_isolates) >= 1:
 		fasta_filter(outPut_Folder, included_isolates)
