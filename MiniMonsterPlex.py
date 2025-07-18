@@ -549,20 +549,23 @@ def mlTree(outPut_Folder):
 	try:
 		command = ['Rscript',
 			'--vanilla',
-			'MLtree.R',
+			'LaTree.R',
 			f'{outPut_Folder}/raxml_out/RAxML_bestTree.miniMonsterPlex.raxml']
 		subprocess.run(' '.join(command),
 					shell=True,
 					check=True,
-					capture_output=True)
+					capture_output=True,
+					text=True)
 	except subprocess.CalledProcessError as e:
-		if os.path.isfile('NA.pdf'):
-			os.remove('NA.pdf')
-		print(f'Errror running command: {e}')
-		print(f"Something Went wrong with mlTree:{e.stderr}")
-		quit()		
-	os.mkdir(os.path.join(outPut_Folder,'tree_out'))
-	shutil.move('NA.pdf',f'{outPut_Folder}/tree_out/{outPut_Folder}_tree.pdf')
+		if os.path.isfile('LaAllTreeNUSArooted.pdf'):
+			os.remove('LaAllTreeNUSArooted.pdf')
+		error_details = (f"Something went wrong with the MLtree.R script.\n"
+						 f"Command: {e}\n"
+						 f"Return Code: {e.returncode}\n"
+						 f"Stderr: {e.stderr}")
+		raise RuntimeError(error_details)
+	os.makedirs(os.path.join(outPut_Folder,'tree_out'), exist_ok=True)
+	shutil.move('LaAllTreeNUSArooted.pdf',f'{outPut_Folder}/tree_out/{outPut_Folder}_tree.pdf')
 
 #series of lines for cleaing up left over temp data
 def cleanup(outPut,input_folder,complete):
